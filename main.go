@@ -1,8 +1,16 @@
 package main
 
-import "log"
-import "encoding/json"
-import "time"
+import (
+   "log"
+   "strconv"
+   "encoding/json"
+   "time"
+   "net/http"
+   "io/ioutil"
+   "fmt"
+   "github.com/jinzhu/now"
+   "os"
+)
 
 type Story struct {
    Created_at time.Time `json:"created_at"`
@@ -29,97 +37,93 @@ func Parse(input []byte) ([]Story, int) {
 }
 
 func main() {
-	json := `{  
-   "hits":[  
-      {  
-         "created_at":"2015-05-21T13:59:55.000Z",
-         "title":"64-Bit Code in 2015: New in the Diagnostics of Possible Issues",
-         "url":"https://medium.com/@CPP_Coder/64-bit-code-in-2015-new-in-the-diagnostics-of-possible-issues-b73c625bf2a2",
-         "author":"Coder_CPP",
-         "points":1,
-         "story_text":"",
-         "comment_text":null,
-         "num_comments":0,
-         "story_id":null,
-         "story_title":null,
-         "story_url":null,
-         "parent_id":null,
-         "created_at_i":1432216795,
-         "_tags":[  
-            "story",
-            "author_Coder_CPP",
-            "story_9582765"
-         ],
-         "objectID":"9582765",
-         "_highlightResult":{  
-            "title":{  
-               "value":"64-Bit Code in 2015: New in the Diagnostics of Possible Issues",
-               "matchLevel":"none",
-               "matchedWords":[  
+   // According to wikipedia, HN started February 19, 2007 :)
+   first_day := time.Date(2007, time.February, 19, 12, 0, 0, 0, time.UTC)
+   // So we want to crawl until the day before it started!
+   first_day = first_day.Add(-24 * time.Hour)
 
-               ]
-            },
-            "url":{  
-               "value":"https://medium.com/@CPP_Coder/64-bit-code-in-2015-new-in-the-diagnostics-of-possible-issues-b73c625bf2a2",
-               "matchLevel":"none",
-               "matchedWords":[  
 
-               ]
-            },
-            "author":{  
-               "value":"Coder_CPP",
-               "matchLevel":"none",
-               "matchedWords":[  
+   // For testing:
+   first_day = time.Now().Add(-10 * 24 * time.Hour)
 
-               ]
-            },
-            "story_text":{  
-               "value":"",
-               "matchLevel":"none",
-               "matchedWords":[  
+   // Rate-limit it! Fetch 3600 pages/hour max!
+   ticker := time.Tick(1 * time.Second)
 
-               ]
-            }
-         }
+   for day := time.Now(); day.After(first_day); day = day.Add(-24 * time.Hour) {
+      stories := FetchDay(day)
+      Save(stories, day)
+
+      year, month, day := day.Date()
+      log.Println("Retrieving stories for ", fmt.Sprintf("%v-%v-%v", year, month, day))
+
+      // Block until we've arrived at the next second
+      <-ticker
+   }	
+}
+
+func FetchDay(day time.Time) ([]Story) {
+   start := now.New(day).BeginningOfDay().Unix()
+   end := now.New(day).EndOfDay().Unix()
+
+   var stories []Story
+   var numPages int
+
+   // Fetch the first page
+   stories, numPages = FetchBlock(start, end, 0)
+
+   // Get the rest of the pages
+   for i := 1; i < numPages; i++ {
+      s, _ := FetchBlock(start, end, i)
+      stories = append(stories, s...)
+   }
+
+   return stories
+}
+
+func FetchBlock(start_time, end_time int64, page int) ([]Story, int) {
+   // Fetch the first page
+   url := "http://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=1000"
+   url += "&numericFilters=created_at_i>" + strconv.FormatInt(start_time, 10)
+   url += ",created_at_i<" + strconv.FormatInt(end_time, 10)
+   url += "&page=" + strconv.Itoa(page)
+
+   resp, err := http.Get(url)
+   if err != nil {
+      return nil, 0
+   }
+   defer resp.Body.Close()
+   body, err := ioutil.ReadAll(resp.Body)
+   if err != nil {
+      return nil, 0 
+   }
+
+   stories, noPages := Parse(body)
+
+   return stories, noPages
+}
+
+func Save(stories []Story, date time.Time) {
+   year, month, day := date.Date()
+
+   f, err := os.Create(fmt.Sprintf("./output/HN-stories-%v-%v-%v", year, month, day))
+   if err != nil {
+      log.Println(err)
+      log.Println("Dropping content for (1) " + fmt.Sprintf("./output/day-%v-%v-%v", year, month, day))
+      return
+   }
+   defer f.Close()
+
+   for i := 0; i < len(stories); i++ {
+      json, _ := json.Marshal(stories[i])
+      _, err := f.Write(json)
+      f.WriteString("\n")
+
+      if err != nil {
+         log.Println(err)
+         log.Println("Dropping content for (2) " + fmt.Sprintf("./output/day-%v-%v-%v", year, month, day))
+         return
       }
-   ],
-   "nbHits":1298627,
-   "page":0,
-   "nbPages":1000,
-   "hitsPerPage":1,
-   "processingTimeMS":4,
-   "query":"",
-   "params":"advancedSyntax=true\u0026analytics=false\u0026hitsPerPage=1\u0026numericFilters=created_at_i%3C1432216956\u0026tags=story"
-}`
-
-	stories, noPages := Parse([]byte(json))
-
-	log.Println(noPages)
-	log.Println(stories)
-}
-
-func FetchDay(start_time, end_time int) {
-
-}
-
-// func writeToDisc(itemtype string) {
-// 	f, err := os.Create(fmt.Sprintf("./output/%v-%06d.json", item.Name, item.Flushes))
-// 	if err != nil {
-// 		log.Println(err)
-// 		log.Println("Dropping content!")
-// 		return
-// 	}
-// 	defer f.Close()
-
-// 	for i := 0; i < item.CurrFillFactor; i++ {
-// 		_, err := f.WriteString(item.Content[i] + "\n")
-
-// 		if err != nil {
-// 			log.Println(err)
-// 			log.Println("Dropping content!")
-// 			return
-// 		}
-// 	}
+   }
    
-//     f.Sync()
-// }
+    f.Sync()
+}
