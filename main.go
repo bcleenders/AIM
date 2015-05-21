@@ -10,7 +10,7 @@ import (
    "fmt"
    "github.com/jinzhu/now"
    "os"
-   "github.com/mauidude/go-readability"
+   "github.com/agonopol/readability"
    "strings"
 )
 
@@ -160,7 +160,7 @@ func FetchContent(stories []Story) ([]Result) {
    }()
 
    // Allow 80 parallel fetchers
-   for i := 0; i < 80; i++ {
+   for i := 0; i < 1; i++ {
       parallelismLimit<-1
    }
 
@@ -176,7 +176,7 @@ func FetchContent(stories []Story) ([]Result) {
 }
 
 func FetchUrl(story Story, results chan<- NumberedResult, id int) {
-   if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
+  if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
       resp, err := http.Get(story.Url)
       if err != nil {
          results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
@@ -197,14 +197,27 @@ func FetchUrl(story Story, results chan<- NumberedResult, id int) {
          return
       }
 
-      html := string(body)
+      log.Println("Here!", story.Url)
 
-      doc, err := readability.NewDocument(html)
-      if err != nil {
-         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
-         return
+      var content string
+
+      if strings.HasPrefix(contentType, "text/html") {
+         doc, err := readability.Parse(body)
+         if err != nil {
+            results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+            return
+         }
+
+         content, err = doc.Content()
+         if err != nil {
+            results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+            return
+         }
       }
-      content := doc.Content()
+
+      if strings.HasPrefix(contentType, "text/plain") {
+         content = string(body)
+      }
 
       log.Println(content)
 
