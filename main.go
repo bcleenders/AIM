@@ -51,7 +51,7 @@ func main() {
 
 
    // For testing:
-   first_day = time.Now().Add(-2 * 24 * time.Hour)
+   first_day = time.Now().Add(-10 * 24 * time.Hour)
 
    // Rate-limit it! Fetch 3600 pages/hour max!
    ticker := time.Tick(1 * time.Second)
@@ -205,9 +205,7 @@ func FetchUrl(story Story, results chan<- NumberedResult, id int) {
          return
       }
       content := doc.Content()
-
-      log.Println(content)
-
+      
       // Send the result back
       results <- NumberedResult{Result: Result{Story: story, Webpage: content}, Id: id}
       return
