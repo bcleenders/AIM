@@ -10,6 +10,8 @@ import (
    "fmt"
    "github.com/jinzhu/now"
    "os"
+   "github.com/mauidude/go-readability"
+   "strings"
 )
 
 type Story struct {
@@ -22,6 +24,11 @@ type Story struct {
    Num_comments int `json:"num_comments"`
    Created_at_i int `json:"created_at_i"`
    ObjectId string `json:"objectID"`
+}
+
+type Result struct {
+   Webpage string `json:"webpage"`
+   Story Story `json:"HNItem"`
 }
 
 type Response struct {
@@ -44,17 +51,18 @@ func main() {
 
 
    // For testing:
-   first_day = time.Now().Add(-10 * 24 * time.Hour)
+   first_day = time.Now().Add(-2 * 24 * time.Hour)
 
    // Rate-limit it! Fetch 3600 pages/hour max!
    ticker := time.Tick(1 * time.Second)
 
    for day := time.Now(); day.After(first_day); day = day.Add(-24 * time.Hour) {
-      stories := FetchDay(day)
-      Save(stories, day)
+      y, m, d := day.Date()
+      log.Println("Retrieving stories for ", fmt.Sprintf("%v-%v-%v", y, m, d))
 
-      year, month, day := day.Date()
-      log.Println("Retrieving stories for ", fmt.Sprintf("%v-%v-%v", year, month, day))
+      stories := FetchDay(day)
+      results := FetchContent(stories)
+      Save(results, day)
 
       // Block until we've arrived at the next second
       <-ticker
@@ -102,7 +110,7 @@ func FetchBlock(start_time, end_time int64, page int) ([]Story, int) {
    return stories, noPages
 }
 
-func Save(stories []Story, date time.Time) {
+func Save(stories []Result, date time.Time) {
    year, month, day := date.Date()
 
    f, err := os.Create(fmt.Sprintf("./output/HN-stories-%v-%v-%v", year, month, day))
@@ -126,4 +134,85 @@ func Save(stories []Story, date time.Time) {
    }
    
     f.Sync()
+}
+
+// Use this to preserve order
+type NumberedResult struct {
+   Result Result
+   Id int
+}
+
+// Fetch the urls (do it in parallel)
+func FetchContent(stories []Story) ([]Result) {
+   resultChan := make(chan NumberedResult)
+
+   results := make([]Result, len(stories))
+
+   // We need the buffer (1000) to make sure this thread won't block trying to start a new fetcher
+   parallelismLimit := make(chan int, 1000)
+
+   go func() {
+      for i := 0; i < len(stories); i++ {
+         // Wait untill we're allowed to continue...
+         <-parallelismLimit
+         go FetchUrl(stories[i], resultChan, i)
+      }
+   }()
+
+   // Allow 80 parallel fetchers
+   for i := 0; i < 80; i++ {
+      parallelismLimit<-1
+   }
+
+   for i := 0; i < len(stories); i++ {
+      numberedResult := <-resultChan
+      results[numberedResult.Id] = numberedResult.Result
+
+      // Allow the next fetcher to start
+      parallelismLimit <- 1
+   }
+
+   return results
+}
+
+func FetchUrl(story Story, results chan<- NumberedResult, id int) {
+   if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
+      resp, err := http.Get(story.Url)
+      if err != nil {
+         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+         return
+      }
+      defer resp.Body.Close()
+
+      body, err := ioutil.ReadAll(resp.Body)
+      if err != nil {
+         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+         return
+      }
+
+      contentType := http.DetectContentType(body)
+      if ! strings.HasPrefix(contentType, "text") {
+         log.Println("Found content type", contentType, " in url", story.Url, "-> skipping")
+         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+         return
+      }
+
+      html := string(body)
+
+      doc, err := readability.NewDocument(html)
+      if err != nil {
+         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+         return
+      }
+      content := doc.Content()
+
+      log.Println(content)
+
+      // Send the result back
+      results <- NumberedResult{Result: Result{Story: story, Webpage: content}, Id: id}
+      return
+   } else {
+      results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+      return
+   }
 }
