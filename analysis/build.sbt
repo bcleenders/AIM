@@ -1,4 +1,4 @@
-name := "HackerNewsTrends"
+name := "Analysis"
 
 version := "1.0"
 
@@ -8,3 +8,4 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "1.3.0",
   "org.apache.spark" %% "spark-mllib" % "1.3.0"
 )
+    
