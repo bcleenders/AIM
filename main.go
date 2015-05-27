@@ -33,19 +33,19 @@ type Result struct {
 }
 
 type Response struct {
-	Hits []Story `json:"hits"`
-	NbPages int `json:"nbPages"`
+   Hits []Story `json:"hits"`
+   NbPages int `json:"nbPages"`
 }
 
 func Parse(input []byte) ([]Story, int) {
-	var parsed Response
-	json.Unmarshal(input, &parsed)
+   var parsed Response
+   json.Unmarshal(input, &parsed)
 
-	return parsed.Hits, parsed.NbPages
+   return parsed.Hits, parsed.NbPages
 }
 
 func main() {
-   runtime.GOMAXPROCS(runtime.NumCPU())
+   runtime.GOMAXPROCS(3)
 
    // According to wikipedia, HN started February 19, 2007 :)
    first_day := time.Date(2007, time.February, 19, 12, 0, 0, 0, time.UTC)
@@ -54,12 +54,17 @@ func main() {
 
 
    // For testing:
-   first_day = time.Now().Add(-365 * 24 * time.Hour)
+   first_day = time.Now().Add(-400 * 24 * time.Hour)
 
    // Rate-limit it! Fetch 3600 pages/hour max!
    ticker := time.Tick(1 * time.Second)
 
-   for day := time.Now(); day.After(first_day); day = day.Add(-24 * time.Hour) {
+   n := time.Now()
+   // For my private testing
+   const shortForm = "2006-Jan-02"
+   n, _ = time.Parse(shortForm, "2014-Jun-21")
+
+   for day := n; day.After(first_day); day = day.Add(-24 * time.Hour) {
       y, m, d := day.Date()
       log.Println("Retrieving stories for ", fmt.Sprintf("%v-%v-%v", y, m, d))
 
@@ -69,7 +74,7 @@ func main() {
 
       // Block until we've arrived at the next second
       <-ticker
-   }	
+   }  
 }
 
 func FetchDay(day time.Time) ([]Story) {
@@ -163,7 +168,7 @@ func FetchContent(stories []Story) ([]Result) {
    }()
 
    // Allow 80 parallel fetchers
-   for i := 0; i < 80; i++ {
+   for i := 0; i < 20; i++ {
       parallelismLimit<-1
    }
 
@@ -179,6 +184,13 @@ func FetchContent(stories []Story) ([]Result) {
 }
 
 func FetchUrl(story Story, results chan<- NumberedResult, id int) {
+    defer func() {
+       if r := recover(); r != nil {
+           log.Println("Recovered from:", r, " in url:", story.Url)
+       }
+   }()
+
+
    finished := make(chan int)
    result := NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
 
@@ -251,4 +263,3 @@ func FetchUrl(story Story, results chan<- NumberedResult, id int) {
    }
    results <- result
 }
-
