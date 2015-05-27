@@ -10,8 +10,9 @@ import (
    "fmt"
    "github.com/jinzhu/now"
    "os"
-   "github.com/mauidude/go-readability"
+   "github.com/agonopol/readability"
    "strings"
+   "runtime"
 )
 
 type Story struct {
@@ -32,18 +33,20 @@ type Result struct {
 }
 
 type Response struct {
-	Hits []Story `json:"hits"`
-	NbPages int `json:"nbPages"`
+   Hits []Story `json:"hits"`
+   NbPages int `json:"nbPages"`
 }
 
 func Parse(input []byte) ([]Story, int) {
-	var parsed Response
-	json.Unmarshal(input, &parsed)
+   var parsed Response
+   json.Unmarshal(input, &parsed)
 
-	return parsed.Hits, parsed.NbPages
+   return parsed.Hits, parsed.NbPages
 }
 
 func main() {
+   runtime.GOMAXPROCS(3)
+
    // According to wikipedia, HN started February 19, 2007 :)
    first_day := time.Date(2007, time.February, 19, 12, 0, 0, 0, time.UTC)
    // So we want to crawl until the day before it started!
@@ -51,12 +54,17 @@ func main() {
 
 
    // For testing:
-   first_day = time.Now().Add(-2 * 24 * time.Hour)
+   first_day = time.Now().Add(-400 * 24 * time.Hour)
 
    // Rate-limit it! Fetch 3600 pages/hour max!
    ticker := time.Tick(1 * time.Second)
 
-   for day := time.Now(); day.After(first_day); day = day.Add(-24 * time.Hour) {
+   n := time.Now()
+   // For my private testing
+   const shortForm = "2006-Jan-02"
+   n, _ = time.Parse(shortForm, "2014-Jun-21")
+
+   for day := n; day.After(first_day); day = day.Add(-24 * time.Hour) {
       y, m, d := day.Date()
       log.Println("Retrieving stories for ", fmt.Sprintf("%v-%v-%v", y, m, d))
 
@@ -66,7 +74,7 @@ func main() {
 
       // Block until we've arrived at the next second
       <-ticker
-   }	
+   }  
 }
 
 func FetchDay(day time.Time) ([]Story) {
@@ -160,7 +168,7 @@ func FetchContent(stories []Story) ([]Result) {
    }()
 
    // Allow 80 parallel fetchers
-   for i := 0; i < 80; i++ {
+   for i := 0; i < 20; i++ {
       parallelismLimit<-1
    }
 
@@ -176,43 +184,82 @@ func FetchContent(stories []Story) ([]Result) {
 }
 
 func FetchUrl(story Story, results chan<- NumberedResult, id int) {
-   if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
-      resp, err := http.Get(story.Url)
-      if err != nil {
-         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+    defer func() {
+       if r := recover(); r != nil {
+           log.Println("Recovered from:", r, " in url:", story.Url)
+       }
+   }()
+
+
+   finished := make(chan int)
+   result := NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+
+   // Start the fetcher in a new routine
+   go func() {
+      defer func() {
+           if r := recover(); r != nil {
+               log.Println("Recovered from:", r, " in url:", story.Url)
+               finished <- 1
+           }
+       }()
+
+      if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
+         resp, err := http.Get(story.Url)
+         if err != nil {
+            finished <- 1
+            return
+         }
+         defer resp.Body.Close()
+
+         body, err := ioutil.ReadAll(resp.Body)
+         if err != nil {
+            finished <- 1
+            return
+         }
+
+         contentType := http.DetectContentType(body)
+         if ! strings.HasPrefix(contentType, "text") {
+            log.Println("Found content type", contentType, " in url", story.Url, "-> skipping")
+            finished <- 1
+            return
+         }
+
+         var content string
+
+         if strings.HasPrefix(contentType, "text/html") {
+            doc, err := readability.Parse(body)
+            if err != nil {
+               finished <- 1
+               return
+            }
+
+            content, err = doc.Content()
+            if err != nil {
+               finished <- 1
+               return
+            }
+         }
+
+         if strings.HasPrefix(contentType, "text/plain") {
+            content = string(body)
+         }
+
+         // Send the result back
+         result = NumberedResult{Result: Result{Story: story, Webpage: content}, Id: id}
+         finished <- 1
+         return
+      } else {
+         finished <- 1
          return
       }
-      defer resp.Body.Close()
+   }()
 
-      body, err := ioutil.ReadAll(resp.Body)
-      if err != nil {
-         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
-         return
-      }
-
-      contentType := http.DetectContentType(body)
-      if ! strings.HasPrefix(contentType, "text") {
-         log.Println("Found content type", contentType, " in url", story.Url, "-> skipping")
-         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
-         return
-      }
-
-      html := string(body)
-
-      doc, err := readability.NewDocument(html)
-      if err != nil {
-         results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
-         return
-      }
-      content := doc.Content()
-
-      log.Println(content)
-
-      // Send the result back
-      results <- NumberedResult{Result: Result{Story: story, Webpage: content}, Id: id}
-      return
-   } else {
-      results <- NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
-      return
+   // Block untill either a finish or timeout
+   select {
+      case <-finished:
+         
+      case <-time.After(20 * time.Second):
+         
    }
+   results <- result
 }
