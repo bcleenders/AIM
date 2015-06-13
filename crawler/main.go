@@ -10,7 +10,8 @@ import (
    "fmt"
    "github.com/jinzhu/now"
    "os"
-   "github.com/agonopol/readability"
+   // "github.com/agonopol/readability"
+   "github.com/advancedlogic/GoOse"
    "strings"
    "runtime"
 )
@@ -27,8 +28,17 @@ type Story struct {
    ObjectId string `json:"objectID"`
 }
 
+type Webpage struct {
+   Title string `json:"title"`
+   MetaDescription string `json:"metaDescription"`
+   MetaKeywords string `json:"metaKeywords"`
+   CleanedText string `json:"cleanedText"`
+   FinalUrl string `json:"finalUrl"`
+   TopImage string `json:"topImage"`
+}
+
 type Result struct {
-   Webpage string `json:"webpage"`
+   Webpage Webpage `json:"webpage"`
    Story Story `json:"HNItem"`
 }
 
@@ -45,7 +55,18 @@ func Parse(input []byte) ([]Story, int) {
 }
 
 func main() {
-   runtime.GOMAXPROCS(3)
+   runtime.GOMAXPROCS(12)
+
+   // Print some stats
+   go func() {
+      start := time.Now()
+      go func() {
+         for {
+            log.Println("Running for", time.Since(start), " - successes:", successes, ", failedGets:", failedGets, ", failedReads:", failedReads, ", emptyExtracts:", emptyExtracts, ", skippedUrls:", skippedUrls)
+            <-time.After(30 * time.Second)
+         }
+      }()
+   }()
 
    // According to wikipedia, HN started February 19, 2007 :)
    first_day := time.Date(2007, time.February, 19, 12, 0, 0, 0, time.UTC)
@@ -54,7 +75,7 @@ func main() {
 
 
    // For testing:
-   first_day = time.Now().Add(-400 * 24 * time.Hour)
+   // first_day = time.Now().Add(- 100 * 24 * time.Hour)
 
    // Rate-limit it! Fetch 3600 pages/hour max!
    ticker := time.Tick(1 * time.Second)
@@ -62,7 +83,7 @@ func main() {
    n := time.Now()
    // For my private testing
    const shortForm = "2006-Jan-02"
-   n, _ = time.Parse(shortForm, "2014-Jun-21")
+   n, _ = time.Parse(shortForm, "2014-Nov-04")
 
    for day := n; day.After(first_day); day = day.Add(-24 * time.Hour) {
       y, m, d := day.Date()
@@ -168,7 +189,7 @@ func FetchContent(stories []Story) ([]Result) {
    }()
 
    // Allow 80 parallel fetchers
-   for i := 0; i < 20; i++ {
+   for i := 0; i < 240; i++ {
       parallelismLimit<-1
    }
 
@@ -183,6 +204,12 @@ func FetchContent(stories []Story) ([]Result) {
    return results
 }
 
+var failedGets int = 0
+var failedReads int = 0
+var emptyExtracts int = 0
+var skippedUrls int = 0
+var successes int = 0
+
 func FetchUrl(story Story, results chan<- NumberedResult, id int) {
     defer func() {
        if r := recover(); r != nil {
@@ -190,75 +217,73 @@ func FetchUrl(story Story, results chan<- NumberedResult, id int) {
        }
    }()
 
+   // Return this on error
+   emptyResult := NumberedResult{Result: Result{Story: story, Webpage: Webpage{
+      Title: "",
+      MetaDescription: "",
+      MetaKeywords: "",
+      CleanedText: "",
+      FinalUrl: "",
+      TopImage: "",
+   }}, Id: id}
 
-   finished := make(chan int)
-   result := NumberedResult{Result: Result{Story: story, Webpage: ""}, Id: id}
+   finished := make(chan NumberedResult)
 
    // Start the fetcher in a new routine
    go func() {
       defer func() {
-           if r := recover(); r != nil {
-               log.Println("Recovered from:", r, " in url:", story.Url)
-               finished <- 1
-           }
-       }()
+         if r := recover(); r != nil {
+            log.Println("Recovered from:", r, " in url:", story.Url)
+            finished <- emptyResult
+         }
+      }()
 
       if story.Url != "" && !strings.HasSuffix(story.Url, ".pdf") {
          resp, err := http.Get(story.Url)
          if err != nil {
-            finished <- 1
+            finished <- emptyResult
+            failedGets++
             return
          }
          defer resp.Body.Close()
 
          body, err := ioutil.ReadAll(resp.Body)
          if err != nil {
-            finished <- 1
+            finished <- emptyResult
+            failedReads++
             return
          }
 
-         contentType := http.DetectContentType(body)
-         if ! strings.HasPrefix(contentType, "text") {
-            log.Println("Found content type", contentType, " in url", story.Url, "-> skipping")
-            finished <- 1
-            return
+         g := goose.New()
+         article := g.ExtractFromRawHtml(story.Url, string(body))
+
+         page := Webpage{
+            Title: article.Title,
+            MetaDescription: article.MetaDescription,
+            MetaKeywords: article.MetaKeywords,
+            CleanedText: article.CleanedText,
+            FinalUrl: article.FinalUrl,
+            TopImage: article.TopImage,
          }
 
-         var content string
-
-         if strings.HasPrefix(contentType, "text/html") {
-            doc, err := readability.Parse(body)
-            if err != nil {
-               finished <- 1
-               return
-            }
-
-            content, err = doc.Content()
-            if err != nil {
-               finished <- 1
-               return
-            }
+         if page.CleanedText == "" {
+            emptyExtracts++
+         } else {
+            successes++
          }
 
-         if strings.HasPrefix(contentType, "text/plain") {
-            content = string(body)
-         }
-
-         // Send the result back
-         result = NumberedResult{Result: Result{Story: story, Webpage: content}, Id: id}
-         finished <- 1
-         return
+         finished<- NumberedResult{Result: Result{Story: story, Webpage: page}, Id: id}
       } else {
-         finished <- 1
-         return
+         skippedUrls++
+         finished<- emptyResult
       }
    }()
 
    // Block untill either a finish or timeout
    select {
-      case <-finished:
-         
+      case result := <-finished:
+         results<- result
       case <-time.After(20 * time.Second):
+         results<- emptyResult
    }
-   results <- result
 }
