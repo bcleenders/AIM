@@ -14,13 +14,6 @@ object PostgresExport extends App {
 
   // Brings in default date formats etc.
 
-  case class WebPage(title: String, metaDescription: String, metaKeywords: String, cleanedText: String, finalUrl: String, topImage: String)
-
-  case class HNItem(created_at: java.util.Date, title: String, url: String, author: String, points: Int, story_text: String,
-                    num_comments: Int, created_at_i: Int, objectID: String)
-
-  case class Item(webpage: WebPage, HNItem: HNItem)
-
   val sc = new SparkContext("local[8]", "Main")
 
   val configuration = URLParser.parse("jdbc:postgresql://localhost:5432/hackernews?user=postgres&password=bergersg")
