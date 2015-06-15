@@ -5,12 +5,26 @@ import weka.core.stemmers.SnowballStemmer
 
 package object hackernewstrends {
 
+  // Input models
   case class WebPage(title: String, metaDescription: String, metaKeywords: String, cleanedText: String, finalUrl: String, topImage: String)
 
   case class HNItem(created_at: java.util.Date, title: String, url: String, author: String, points: Int, story_text: String,
                     num_comments: Int, created_at_i: Int, objectID: String)
 
   case class Item(webpage: WebPage, HNItem: HNItem)
+
+
+
+  // Output models
+  case class Topics(jobName: String, description: String, topics: Array[Topic])
+
+  case class Topic(id: Int, words: Array[TopicWord])
+
+  case class TopicWord(word: String, probability: Double)
+
+  case class TopicDistribution(jobName: String, description: String, articles: Array[ArticleTopic])
+  case class ArticleTopic(objectID: String, topics: Array[TopTopic])
+  case class TopTopic(id: Int, probability: Double)
 
   // Load the stop words
   // List found on: http://jmlr.org/papers/volume5/lewis04a/a11-smart-stop-list/english.stop
@@ -39,6 +53,13 @@ package object hackernewstrends {
 
           words
         }
+      })
+    }
+
+    def stem: RDD[Array[String]] = {
+      val snowballStemmer = new SnowballStemmer
+      corpus.map(_.webpage.cleanedText).mapPartitions(partition => {
+        partition.map(_.stem).map(_.toLowerCase.split("\\s"))
       })
     }
   }

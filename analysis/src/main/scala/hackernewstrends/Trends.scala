@@ -5,6 +5,7 @@ import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.json4s.jackson.JsonMethods._
+import org.json4s.native.Serialization._
 import org.json4s.{DefaultFormats, _}
 
 import scala.collection.mutable
@@ -13,6 +14,10 @@ object Trends extends App {
   implicit val formats = DefaultFormats // Brings in default date formats etc.
 
   val jobQuery = "2015-*"
+  val jobDescription = "LDA on all articles from 2015 with word stemming."
+  // LDA parameters
+  val numTopics = 50
+  val maxIterations = 50
 
   // Load the stop words
   // List found on: http://jmlr.org/papers/volume5/lewis04a/a11-smart-stop-list/english.stop
@@ -33,13 +38,13 @@ object Trends extends App {
 
   val tokenized =
     corpus
-      .splitWords
+      .stem
       .map(words =>
-        words
-          .filter(_.length > 3) // Only words that are longer than 3 characters
-          .filter(_.forall(java.lang.Character.isLetter)) // Only letters
-          .filter(!stopWords.contains(_)) // Filter out the stop-words
-          .map(_.toLowerCase) // convert everything to lowercase
+      words
+        .filter(_.length > 3) // Only words that are longer than 3 characters
+        .filter(_.forall(java.lang.Character.isLetter)) // Only letters
+        .filter(!stopWords.contains(_)) // Filter out the stop-words
+        .map(_.toLowerCase) // convert everything to lowercase
       )
 
 
@@ -78,43 +83,42 @@ object Trends extends App {
       (id, Vectors.sparse(vocab.size, counts.toSeq))
     }
 
-  // Set LDA parameters
-  val numTopics = 50
-  val lda = new LDA().setK(numTopics).setMaxIterations(50)
+
+  val lda = new LDA().setK(numTopics).setMaxIterations(maxIterations)
 
   val ldaModel = lda.run(documents)
   val avgLogLikelihood = ldaModel.logLikelihood / documents.count()
 
 
-  // Write topics, showing top-weighted 10 terms for each topic.
-  val outTM = new java.io.FileWriter(s"output/Topic Matrix_$jobQuery.txt")
-  var counter = 0
-
-  // Print topics, showing top-weighted 10 terms for each topic.
-  val topicIndices = ldaModel.describeTopics(maxTermsPerTopic = 10)
-  topicIndices.foreach { case (terms, termWeights) =>
-    outTM.write(s"TOPIC $counter:\n")
+  // Write topics, showing top-weighted 20 terms for each topic.
+  var counter = -1
+  val topicIndices = ldaModel.describeTopics(maxTermsPerTopic = 20)
+  val topics = topicIndices.map { case (terms, termWeights) =>
     counter = counter + 1
-    terms.zip(termWeights).foreach { case (term, weight) =>
-      outTM.write(s"${vocabArray(term.toInt)}\t$weight\n")
+    val topicWords = terms.zip(termWeights).map { case (term, weight) =>
+      TopicWord(vocabArray(term.toInt), weight)
     }
-    outTM.write("\n")
+
+    Topic(counter, topicWords)
   }
 
+  val outTM = new java.io.FileWriter(s"output/Stemming: Topic Matrix_$jobQuery.json")
+  outTM.write(writePretty(Topics(jobQuery, jobDescription, topics)))
   outTM.close()
 
-  // Write top topics for each document
-  val outTD = new java.io.FileWriter(s"output/Topic Distributions_$jobQuery.txt")
 
   val topicDist = ldaModel.topicDistributions.collect()
-  corpus.map(_.HNItem.title).collect().zip(topicDist.sortBy(_._1)).foreach { case (docID, (_, topics)) =>
-    outTD.write(docID)
-    topics.toArray.zipWithIndex.filter(_._1 >= 1.0 / numTopics).sortBy(-_._1).foreach { case (_, topicID) =>
-      outTD.write(", " + topicID)
+  val articles = corpus.map(_.HNItem.objectID).collect().zip(topicDist.sortBy(_._1)).map { case (docID, (_, topics)) =>
+    val topTopics = topics.toArray.zipWithIndex.filter(_._1 >= 1.0 / numTopics).sortBy(-_._1).map { case (probability, topicID) =>
+      TopTopic(topicID, probability)
     }
-    outTD.write("\n")
+
+    ArticleTopic(docID, topTopics)
   }
 
+  //Write top topics for each document
+  val outTD = new java.io.FileWriter(s"output/Stemming: Topic Distributions_$jobQuery.json")
+  outTD.write(writePretty(TopicDistribution(jobQuery, jobDescription, articles)))
   outTD.close()
 
   sc.stop()
