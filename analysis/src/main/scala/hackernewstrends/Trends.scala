@@ -107,14 +107,14 @@ object Trends extends App {
   outTM.close()
 
 
-  val topicDist = ldaModel.topicDistributions
-  val articles = corpus.map(_.HNItem.objectID).zip(topicDist.sortBy(_._1)).map { case (docID, (_, topics)) =>
+  val topicDist = ldaModel.topicDistributions.collect()
+  val articles = corpus.map(_.HNItem.objectID).collect().zip(topicDist.sortBy(_._1)).map { case (docID, (_, topics)) =>
     val topTopics = topics.toArray.zipWithIndex.filter(_._1 >= 1.0 / numTopics).sortBy(-_._1).map { case (probability, topicID) =>
       TopTopic(topicID, probability)
     }
 
     ArticleTopic(docID, topTopics)
-  }.collect()
+  }
 
   //Write top topics for each document
   val outTD = new java.io.FileWriter(s"output/Stemming: Topic Distributions_$jobQuery.json")
