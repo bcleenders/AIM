@@ -13,6 +13,10 @@ package object hackernewstrends {
 
   case class Item(webpage: WebPage, HNItem: HNItem)
 
+  case class Table(title: String, metaDescription: String, metaKeywords: String, cleanedText: String,
+                   finalUrl: String, topImage: String, url: String, author: String, points: Int,
+                   story_text: String, num_comments: Int, created_at_i: Int, objectID: String)
+
 
 
   // Output models
@@ -22,9 +26,11 @@ package object hackernewstrends {
 
   case class TopicWord(word: String, probability: Double)
 
-  case class TopicDistribution(jobName: String, description: String, articles: Array[ArticleTopic])
+  case class JobDistribution(jobId: Int, jobName: String, description: String, numTopics: Int, maxIterations: Int)
   case class ArticleTopic(objectID: String, topics: Array[TopTopic])
   case class TopTopic(id: Int, probability: Double)
+
+  case class Tokenized(id: String, words: Array[String])
 
   // Load the stop words
   // List found on: http://jmlr.org/papers/volume5/lewis04a/a11-smart-stop-list/english.stop
@@ -56,10 +62,10 @@ package object hackernewstrends {
       })
     }
 
-    def stem: RDD[Array[String]] = {
+    def stem: RDD[(String, Array[String])] = {
       val snowballStemmer = new SnowballStemmer
-      corpus.map(_.webpage.cleanedText).mapPartitions(partition => {
-        partition.map(_.stem).map(_.toLowerCase.split("\\s"))
+      corpus.map(x => x.HNItem.objectID -> x.webpage.cleanedText).mapPartitions(partition => {
+        partition.map(x => x._1 -> x._2.stem).map(x => x._1 -> x._2.toLowerCase.split("\\s"))
       })
     }
   }
