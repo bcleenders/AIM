@@ -7,7 +7,6 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{DefaultFormats, _}
-import org.apache.log4j.{Logger, Level}
 
 import scala.collection.mutable
 

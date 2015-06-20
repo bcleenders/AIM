@@ -5,12 +5,32 @@ import weka.core.stemmers.SnowballStemmer
 
 package object hackernewstrends {
 
+  // Input models
   case class WebPage(title: String, metaDescription: String, metaKeywords: String, cleanedText: String, finalUrl: String, topImage: String)
 
   case class HNItem(created_at: java.util.Date, title: String, url: String, author: String, points: Int, story_text: String,
                     num_comments: Int, created_at_i: Int, objectID: String)
 
   case class Item(webpage: WebPage, HNItem: HNItem)
+
+  case class Table(title: String, metaDescription: String, metaKeywords: String, cleanedText: String,
+                   finalUrl: String, topImage: String, url: String, author: String, points: Int,
+                   story_text: String, num_comments: Int, created_at_i: Int, objectID: String)
+
+
+
+  // Output models
+  case class Topics(jobName: String, description: String, topics: Array[Topic])
+
+  case class Topic(id: Int, words: Array[TopicWord])
+
+  case class TopicWord(word: String, probability: Double)
+
+  case class JobDistribution(jobId: Int, jobName: String, description: String, numTopics: Int, maxIterations: Int)
+  case class ArticleTopic(objectID: String, topics: Array[TopTopic])
+  case class TopTopic(id: Int, probability: Double)
+
+  case class Tokenized(id: String, words: Array[String])
 
   // Load the stop words
   // List found on: http://jmlr.org/papers/volume5/lewis04a/a11-smart-stop-list/english.stop
@@ -39,6 +59,13 @@ package object hackernewstrends {
 
           words
         }
+      })
+    }
+
+    def stem: RDD[(String, Array[String])] = {
+      val snowballStemmer = new SnowballStemmer
+      corpus.map(x => x.HNItem.objectID -> x.webpage.cleanedText).mapPartitions(partition => {
+        partition.map(x => x._1 -> x._2.stem).map(x => x._1 -> x._2.toLowerCase.split("\\s"))
       })
     }
   }
