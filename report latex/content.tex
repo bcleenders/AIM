@@ -4,7 +4,7 @@ Hacker News is a social news site: it aggregates news by allowing users to submi
 
 The content on Hacker News is mostly related to science, in particular computer science. The guidelines for what content can be posted are very broad; the guidelines specify on topic as ``\textit{anything that gratifies one's intellectual curiosity}''\footnote{\url{https://news.ycombinator.com/newsguidelines.html}}.
 
-Over the last seven years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic interface.
+Over the last seven years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic, terminal-like interface.
 
 \subsection{Research Question}
 Run two clustering algorithms, compare results, profit.
@@ -57,18 +57,31 @@ An interesting remark, is that January 6th 2014 did not have any submissions. Th
 \subsection{Upvote Distribution}
 If users like a story, they can express their approval by upvoting it. These upvotes are then used to rank the stories by popularity and calculate the (currently) most popular submissions. Since the formula for determining a posts ``score'' strongly favours newly submitted stories, even stories with few upvotes can spike to the frontpage.
 
-To enter the frontpage (the top 30), a story often needs at least ten upvotes, stories that stay on the frontpage for a longer period of time will often have over a hundred upvotes. The distribution of upvotes per story can be seen in figure~\ref{fig:upvoteDistribution}.
+To enter the frontpage (the top 30), a story often needs at least ten upvotes, stories that stay on the frontpage for a longer period of time will often have over a hundred upvotes. The distribution of upvotes per story can be seen in figure~\ref{fig:distribution}. Stories placed in buckets of size 100 based on the number of upvotes they received. The graph plots the size of each bucket
 
-Note that this graph is scaled logarithmically: 97.5\% of the stories are in the first bucket. That means only 2.5\% of the stories get over 100 upvotes.
+Note that these graphs are scaled logarithmically: in the graph showing all posts (figure~\ref{fig:distribution_all}), 97.5\% of the stories are in the first bucket. That means only 2.5\% of the stories get over 100 upvotes. 
+
+The second graph (\ref{fig:distribution_zoomed_in}) is a zoomed in version with a bucket size of 1, and shows the distribution for points with 30 upvotes or less, a set of over 1.4 million stories.
 
 \begin{figure}[ht!]
-	\caption{Distribution of upvotes over posts (log scale)}
-	\label{fig:upvoteDistribution}
-	\centering
-	\includegraphics[width=12cm]{upvote_distribution}
+\centering
+\begin{subfigure}{.55\textwidth}
+  \centering
+  \includegraphics[height=6cm]{upvote_distribution_all}
+  \caption{Distribution over all stories\\Bucket size 100}
+  \label{fig:distribution_all}
+\end{subfigure}%
+\begin{subfigure}{.45\textwidth}
+  \centering
+  \includegraphics[height=6cm]{upvote_distribution_zoomed_in}
+  \caption{Distribution over low-ranked stories\\Bucket size 1}
+  \label{fig:distribution_zoomed_in}
+\end{subfigure}
+\caption{Distributions of upvotes over posts (log scale)}
+\label{fig:distribution}
 \end{figure}
 
-There are only six stories with over 2100 upvotes. For completeness' sake, this is the list:
+There are only six stories with over 2100 upvotes. For completeness' sake, these are the stories whose popularity is quite literally ``off the charts'':
 \begin{center}
     \begin{tabular}{|p{=8.5cm}|p{2cm}|}
        \hline
@@ -137,10 +150,10 @@ The high ranking of github.com (a code hosting site, \textit{not} a news site) c
 Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) are not in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
 
 \section{Analysis}
-Say that we did unsupervised LDA.
+Say that we did two types of unsupervised clustering: k-means and LDA. K-means
 
 \subsection{Latent Dirichlet Allocation}
-Some explanation what the F*** this is
+Some explanation what the F this is
 
 \subsection{Implementation}
 
