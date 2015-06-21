@@ -1,10 +1,15 @@
 \section{Introduction}
 \subsection{What is HackerNews}
-HackerNews is a social news site: it aggregates news by allowing users to submit stories. Interesting submissions can be upvoted by other users and all submissions are ranked by popularity.
+Hacker News is a social news site: it aggregates news by allowing users to submit stories. Interesting submissions can be upvoted by other users and all submissions are ranked by popularity.
 
-The content on Hacker News is mostly related to science, in particular computer science. The guidelines for what content can be posted are very broad: ``\textit{anything that gratifies one's intellectual curiosity}''. This is in line with the type of companies the company behind Hacker News, YCombinator, invests in
+The content on Hacker News is mostly related to science, in particular computer science. The guidelines for what content can be posted are very broad; the guidelines specify on topic as ``\textit{anything that gratifies one's intellectual curiosity}''\footnote{\url{https://news.ycombinator.com/newsguidelines.html}}.
 
-\subsection{Research question}
+Over the last seven years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic interface.
+
+\subsection{Research Question}
+Run two clustering algorithms, compare results, profit.
+
+\lipsum[1-1]
 
 \section{Dataset}
 As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. 
@@ -12,13 +17,14 @@ As explained in the previous section, our analysis is on the set of all stories 
 Let us first consider what we mean when we refer to a story. To do so, we have to separate between the various types of content on Hacker News, which can be catagorized in these four groups:
 \begin{itemize}
 \item Story: the majority of submissions are stories. A story can be either a link to another webpage or a short text by the submittor.
-\item Job: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under 1 of the total volume.
+\item Job: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under one percent of the total volume.
 \item Poll: users can submit multiple choice questions for other users to answer.
 \item Comment: the three types mentioned above can receive comments by other users.
 \end{itemize}
 
 Since this research focuses only on the stories, we have left out the other three types. The dataset used in our research contains all stories between February 19th 2007 (the date Hacker News was launched\footnote{\url{https://news.ycombinator.com/hackernews.html}}) and June 10th 2015 (the day we ran our crawler). This is a time span of 3033 days, during which a total of over 1.5 million stories were submitted.
 
+\subsection{Data Collection}
 To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally have either a story text or a url, most only have a url.
 
 For the stories with a non-empty story text field, fetching it from the API is enough. For other stories, we also fetched the content the URL links to. An important remark here is that some urls (especially the old ones) have become invalid over the course of time.
@@ -27,10 +33,10 @@ For the stories with a non-empty story text field, fetching it from the API is e
 
 We split the result in files with 1 day of articles per file. This dataset is about 4.4 GB in size.
 
-\subsection{Simple statistics}
+\section{Initial Analysis}
 We have now established some semantics of the data gathered for our research. Before diving into the data analysis, we will first quantify the data by providing the reader with some statistics.
 
-\subsubsection{Overall activity}
+\subsection{Overall Activity}
 
 \begin{center}
     \begin{tabular}{|p{3cm}|p{3cm}|}
@@ -48,34 +54,68 @@ We have now established some semantics of the data gathered for our research. Be
 An interesting remark, is that January 6th 2014 did not have any submissions. The reason for this was a long downtime of the Hacker News website
 \footnote{\url{https://twitter.com/hackernewsonion/status/420068968464789505} - Hacker News is DOWN, but your chances of getting into YC if you know how to scale a plain text website are UP.}.
 
-\subsubsection{Top users}
+\subsection{Upvote Distribution}
+If users like a story, they can express their approval by upvoting it. These upvotes are then used to rank the stories by popularity and calculate the (currently) most popular submissions. Since the formula for determining a posts ``score'' strongly favours newly submitted stories, even stories with few upvotes can spike to the frontpage.
+
+To enter the frontpage (the top 30), a story often needs at least ten upvotes, stories that stay on the frontpage for a longer period of time will often have over a hundred upvotes. The distribution of upvotes per story can be seen in figure~\ref{fig:upvoteDistribution}.
+
+Note that this graph is scaled logarithmically: 97.5\% of the stories are in the first bucket. That means only 2.5\% of the stories get over 100 upvotes.
+
+\begin{figure}[ht!]
+	\caption{Distribution of upvotes over posts (log scale)}
+	\label{fig:upvoteDistribution}
+	\centering
+	\includegraphics[width=12cm]{upvote_distribution}
+\end{figure}
+
+There are only six stories with over 2100 upvotes. For completeness' sake, this is the list:
+\begin{center}
+    \begin{tabular}{|p{=8.5cm}|p{2cm}|}
+       \hline
+       \multicolumn{2}{|c|}{Most upvoted stories} \\
+       \hline
+       Title 																				& Points \\
+       \hline
+       Steve Jobs has passed away 										& 4271\\
+		Tim Cook Speaks Up														& 3086\\
+		2048																			& 2732\\
+		Don't Fly During Ramadan											& 2617\\
+		Hyperloop																		& 2549\\
+		Microsoft takes NET open source and cross platform	& 2376\\
+        \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Top Users}
 In figure~\ref{fig:top10ByStories}, we show the statistics for some of the most active submitters. These statistics illustrate that Hacker News has a very active group of users. Together, this top 10 submitted 45,190 stories, which equals an average of 1.5 stories per user per day over the last 7 years.
 \begin{figure}[ht!]
-\caption{Top 10 submitters by submitted stories}
-\label{fig:top10ByStories}
-\centering
-\includegraphics[width=12cm]{top10ByStories}
+	\caption{Top 10 submitters by submitted stories}
+	\label{fig:top10ByStories}
+	\centering
+	\includegraphics[width=12cm]{top10ByStories}
 \end{figure}
 
-If we take the top 10 not by the number of stories a user has submitted but by the number of comments his or her stories have received, we get the rankings in figure~\ref{fig:top10ByStories}.
+If we take the top 10 not by the number of stories a user has submitted but by the number of comments his or her stories have received, we get the rankings in figure~\ref{fig:top10ByComments}.
 
 \begin{figure}[ht!]
-\caption{Top 10 submitters by received comments}
-\label{fig:top10ByComments}
-\centering
-\includegraphics[width=12cm]{top10ByComments}
+	\caption{Top 10 submitters by received comments}
+	\label{fig:top10ByComments}
+	\centering
+	\includegraphics[width=12cm]{top10ByComments}
 \end{figure}
 
-The interesting second place in this top 10 is user ``\_whoishiring``. This user has almost no posts (a mere 114) but a massive 26,649 comments. Experienced Hacker News readers may have already expected this, for this user starts a monthly thread where companies can post job offers and others can respond to these. As such, the user only posts one story per month but its stories are discussed very actively.
+The interesting second place in this top 10 is user ``\_whoishiring``. This user has almost no posts (a mere 114) but received 26,649 comments. Experienced Hacker News readers may have already expected this, for this user starts a monthly thread where companies can post job offers and others can respond to these. As such, the user only posts one story per month but its stories are discussed very actively.
 
-\subsubsection{Top domains}
+\subsection{Top Domains}
+As already stated in the description of the dataset, many of the stories are links to external sites. To provide some insights into which sites attract a lot of attention from the Hacker News community, we made three top ten lists that rank the sites by the same criteria as we did in the previous section: by number of stories, by points and by number of comments.
+
 \begin{center}
     \begin{tabular}{|p{4.5cm}|p{=5cm}|p{5cm}|}
-        \hline
-        \multicolumn{3}{|c|}{Most popular domains} \\
-        \hline
-        By Stories & By Points & By Comments \\
-        \hline
+       \hline
+       \multicolumn{3}{|c|}{Most popular domains} \\
+       \hline
+       By Number of Stories 			& By Points 									& By Comments \\
+       \hline
        techcrunch.com (27.711) 	& github.com (400.373)		       & techcrunch.com (172.854) \\
 		github.com (26.596) 			& techcrunch.com (365.207) 	   & nytimes.com (153.471) \\
 		youtube.com (21.977) 		& nytimes.com (287.234)		   & github.com (127.812) \\
@@ -86,9 +126,15 @@ The interesting second place in this top 10 is user ``\_whoishiring``. This user
 		bbc.co.uk (8.118) 				& washingtonpost.com (97.537) & bbc.co.uk (51.828) \\
 		en.wikipedia.org (7.058) 		& youtube.com (96.339)		  	   & theatlantic.com (41.530) \\
 		businessinsider.com (6.877) & theatlantic.com (77.628)	   & online.wsj.com (36.729) \\
-         \hline
+        \hline
     \end{tabular}
 \end{center}
+
+These rankings provide some insights into what types on news are popular. The big geeky news sites (Techcrunch, Ars Technica and Wired) are present and are about as popular as the big newspapers (NY Times, BBC, Washington Post). 
+
+The high ranking of github.com (a code hosting site, \textit{not} a news site) can be explained by the large number of open source projects hosted on GitHub that submit links to new versions and press releases on Hacker News. Some examples of these projects are Facebook's React framework, Twitter's Bootstrap, SQLite and io.js. 
+
+Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) are not in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
 
 \section{Analysis}
 Say that we did unsupervised LDA.
