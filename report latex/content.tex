@@ -4,34 +4,48 @@ Hacker News is a social news site: it aggregates news by allowing users to submi
 
 The content on Hacker News is mostly related to science, in particular computer science. The guidelines for what content can be posted are very broad; the guidelines specify on topic as ``\textit{anything that gratifies one's intellectual curiosity}''\footnote{\url{https://news.ycombinator.com/newsguidelines.html}}.
 
-Over the last seven years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic, terminal-like interface.
+Over the last eight years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic, terminal-like interface.
 
 \subsection{Research Question}
-Run two clustering algorithms, compare results, profit.
+The world changed a lot over the last eight years, especially in the field of computer science.  The userbase of Hacker News and their interests have changed as well. In this research, we want to see how they changed; what new . Informally phrased, we want to find trends in the popularity of several topics over the last eight years. This lead to the following research question:\\
+\\
+\textsc{Research Question:} how did the popularity of topics on Hacker News change over time?\\
+\\
+This question depends on two other questions, since we have not yet specified what we mean by popular nor what topics we mean exactly. These subquestions are:\\
+\\
+\textsc{SubQuestion 1:} how does one quantify the popularity of a topic?\\
+\textsc{SubQuestion 2:} what topics does the Hacker News content consist of?\\
 
-\lipsum[1-1]
+\subsection{Outline}
+We will address the first subquestion by ranking posts and users over the entire Hacker News history. This will help characterize the dataset and show how various ways of measurent are often very similar and reveal some flaws in several ways of measuring popularity.
+
+Dividing the content in topics is a more complicated task. We have u
 
 \section{Dataset}
-As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. 
+As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. It is a large set of news articles, blog posts, essays, tutorials and other types of textual media. Nearly all of it is English, although there are a few other languages used as well.
 
-Let us first consider what we mean when we refer to a story. To do so, we have to separate between the various types of content on Hacker News, which can be catagorized in these four groups:
+Let us first describe what exactly we refer to when we use the word story. To do this, we have to describe the various types of content on Hacker News, which can be catagorized in these four catagories:
 \begin{itemize}
-\item Story: the majority of submissions are stories. A story can be either a link to another webpage or a short text by the submittor.
-\item Job: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under one percent of the total volume.
-\item Poll: users can submit multiple choice questions for other users to answer.
-\item Comment: the three types mentioned above can receive comments by other users.
+\item Stories: the majority of submissions are stories. A story can be either a link to another webpage or a relatively short text by the submittor.
+\item Jobs: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under one percent of the total volume.
+\item Polls: users can submit multiple choice questions for other users to answer.
+\item Comments: the three types mentioned above can receive comments by other users.
 \end{itemize}
 
 Since this research focuses only on the stories, we have left out the other three types. The dataset used in our research contains all stories between February 19th 2007 (the date Hacker News was launched\footnote{\url{https://news.ycombinator.com/hackernews.html}}) and June 10th 2015 (the day we ran our crawler). This is a time span of 3033 days, during which a total of over 1.5 million stories were submitted.
 
-\subsection{Data Collection}
-To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally have either a story text or a url, most only have a url.
+\subsection{Data Retrieval}
+To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally either have a story text or a url, most only have a url.
 
-For the stories with a non-empty story text field, fetching it from the API is enough. For other stories, we also fetched the content the URL links to. An important remark here is that some urls (especially the old ones) have become invalid over the course of time.
+For the stories with a non-empty story text field, fetching the story from the API is enough. For other stories, we also fetched the content the URL links to. An important remark here is that some urls (especially the old ones) have become invalid over the course of time.
 
-\textit{Something about the article extractor GoOse}
+To crawl all stories (including the linked content), we used a homemade crawler that fetches the content, strips out meaningless text and html and saves the result in chunks of 1 day's worth of content. The code for this crawler is publicly available on GitHub\footnote{\url{https://github.com/bcleenders/AIM/tree/master/crawler}}.
 
-We split the result in files with 1 day of articles per file. This dataset is about 4.4 GB in size.
+The algorithm used for the extraction of meaningfull content is GoOse\footnote{\url{https://github.com/advancedlogic/GoOse}}. It uses heuristics to rank the importance and relevance of html elements on a webpage. For example: if it detects a \texttt{<div>...</div>} block with a lot of words inside, then that is likely to be important. If, on the other hand, it finds an html block \texttt{<button>Login</button>}, then it will remove the block for it is probably not a relevant part of the text of the page.
+
+The resulting dataset is about 4.4 GB in size.
+
+\textbf{+ 10GB dictionary training data for comments!}
 
 \section{Initial Analysis}
 We have now established some semantics of the data gathered for our research. Before diving into the data analysis, we will first quantify the data by providing the reader with some statistics.
@@ -52,7 +66,7 @@ We have now established some semantics of the data gathered for our research. Be
 \end{center}
 
 An interesting remark, is that January 6th 2014 did not have any submissions. The reason for this was a long downtime of the Hacker News website
-\footnote{\url{https://twitter.com/hackernewsonion/status/420068968464789505} - Hacker News is DOWN, but your chances of getting into YC if you know how to scale a plain text website are UP.}.
+\footnote{\url{https://twitter.com/hackernewsonion/status/420068968464789505} - ``Hacker News is DOWN, but your chances of getting into YC if you know how to scale a plain text website are UP.''}.
 
 \subsection{Upvote Distribution}
 If users like a story, they can express their approval by upvoting it. These upvotes are then used to rank the stories by popularity and calculate the (currently) most popular submissions. Since the formula for determining a posts ``score'' strongly favours newly submitted stories, even stories with few upvotes can spike to the frontpage.
@@ -105,7 +119,7 @@ In figure~\ref{fig:top10ByStories}, we show the statistics for some of the most 
 	\caption{Top 10 submitters by submitted stories}
 	\label{fig:top10ByStories}
 	\centering
-	\includegraphics[width=12cm]{top10ByStories}
+	\includegraphics[width=14cm]{top10ByStories}
 \end{figure}
 
 If we take the top 10 not by the number of stories a user has submitted but by the number of comments his or her stories have received, we get the rankings in figure~\ref{fig:top10ByComments}.
@@ -114,7 +128,7 @@ If we take the top 10 not by the number of stories a user has submitted but by t
 	\caption{Top 10 submitters by received comments}
 	\label{fig:top10ByComments}
 	\centering
-	\includegraphics[width=12cm]{top10ByComments}
+	\includegraphics[width=14cm]{top10ByComments}
 \end{figure}
 
 The interesting second place in this top 10 is user ``\_whoishiring``. This user has almost no posts (a mere 114) but received 26,649 comments. Experienced Hacker News readers may have already expected this, for this user starts a monthly thread where companies can post job offers and others can respond to these. As such, the user only posts one story per month but its stories are discussed very actively.
@@ -147,17 +161,24 @@ These rankings provide some insights into what types on news are popular. The bi
 
 The high ranking of github.com (a code hosting site, \textit{not} a news site) can be explained by the large number of open source projects hosted on GitHub that submit links to new versions and press releases on Hacker News. Some examples of these projects are Facebook's React framework, Twitter's Bootstrap, SQLite and io.js. 
 
-Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) are not in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
+Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) do not show up in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
 
-\section{Analysis}
+\section{Topic detection}
+It's data reduction and clustering, really...
+
 Say that we did two types of unsupervised clustering: k-means and LDA. K-means
 
 \subsection{Latent Dirichlet Allocation}
 Some explanation what the F this is
 
-\subsection{Implementation}
+\subsection{Word2Vec \& K-Means}
+Explain two steps and how awesome it worked
+
+\subsection{Discuss implementation}
 
 \section{Results}
+Make some awesome plots from the topics over time, rank by (upvotes | comments | number of articles published)
+
 $1+1=10$
 
 \section{Conclusion}
