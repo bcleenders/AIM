@@ -19,7 +19,7 @@ This question depends on two other questions, since we have not yet specified wh
 \subsection{Outline}
 We will address the first subquestion by ranking posts and users over the entire Hacker News history. This will help characterize the dataset and show how various ways of measurent are often very similar and reveal some flaws in several ways of measuring popularity.
 
-Dividing the content in topics is a more complicated task. We have u
+Dividing the content in topics is a more academically challenging task. We have used two methods to divide the articles into categories: latent Dirichlet allocation and a combination of Word2Vec and k-means. Both methods are briefly explained in section~\ref{sec:topic_detection}.
 
 \section{Dataset}
 As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. It is a large set of news articles, blog posts, essays, tutorials and other types of textual media. Nearly all of it is English, although there are a few other languages used as well.
@@ -34,6 +34,8 @@ Let us first describe what exactly we refer to when we use the word story. To do
 
 Since this research focuses only on the stories, we have left out the other three types. The dataset used in our research contains all stories between February 19th 2007 (the date Hacker News was launched\footnote{\url{https://news.ycombinator.com/hackernews.html}}) and June 10th 2015 (the day we ran our crawler). This is a time span of 3033 days, during which a total of over 1.5 million stories were submitted.
 
+\textbf{+ 10GB comments for dictionary training data!}
+
 \subsection{Data Retrieval}
 To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally either have a story text or a url, most only have a url.
 
@@ -44,8 +46,6 @@ To crawl all stories (including the linked content), we used a homemade crawler 
 The algorithm used for the extraction of meaningfull content is GoOse\footnote{\url{https://github.com/advancedlogic/GoOse}}. It uses heuristics to rank the importance and relevance of html elements on a webpage. For example: if it detects a \texttt{<div>...</div>} block with a lot of words inside, then that is likely to be important. If, on the other hand, it finds an html block \texttt{<button>Login</button>}, then it will remove the block for it is probably not a relevant part of the text of the page.
 
 The resulting dataset is about 4.4 GB in size.
-
-\textbf{+ 10GB dictionary training data for comments!}
 
 \section{Initial Analysis}
 We have now established some semantics of the data gathered for our research. Before diving into the data analysis, we will first quantify the data by providing the reader with some statistics.
@@ -164,6 +164,7 @@ The high ranking of github.com (a code hosting site, \textit{not} a news site) c
 Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) do not show up in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
 
 \section{Topic detection}
+\label{sec:topic_detection}
 It's data reduction and clustering, really...
 
 Say that we did two types of unsupervised clustering: k-means and LDA. K-means
@@ -181,7 +182,8 @@ Make some awesome plots from the topics over time, rank by (upvotes | comments |
 
 \subsection{Popularity plots}
 In this section, we will show some awesome plots of how the popularity of various topics changed over time.
-\begin{figure}[ht!]
+
+\begin{figure}[H]
 	\caption{Popularity of Docker, CoreOS, etcd, containers, OpenStack}
 	\label{fig:trend_docker}
 	\centering
@@ -190,29 +192,29 @@ In this section, we will show some awesome plots of how the popularity of variou
 \end{figure}
 We start the overview with a trend plot (figure~\ref{fig:trend_docker}) of a new and upcoming technique: containerization. Docker and CoreOS were released in March resp. October 2014 and before that, containerization was already used as a term for seperating Linux processes. The trends show how Docker started gaining some real traction within half a year and is really booming in the first half of 2015.
 
-\begin{figure}[ht!]
+\begin{figure}[H]
 	\caption{Popularity of Elon Musk, SpaceX, Tesla, Hyperloop}
 	\label{fig:trend_elon}
 	\centering
 	\includegraphics[width=14cm]{topic_trends/elon}
 	% elon musks spacex musk's tesla hyperloop test track musk
 \end{figure}
+\textbf{Something about Elon's awesome projects :)}
 
-\begin{figure}[ht!]
+\begin{figure}[H]
 	\caption{Popularity of keynote, Apple, live, @scale, conference}
 	\label{fig:trend_keynote}
 	\centering
 	\includegraphics[width=14cm]{topic_trends/keynote}
 	% keynote apple live yesterday's apple's @scale apple developers conference keynotes conference macworld
 \end{figure}
-
 In the popularity charts of keynote-related topics (figure~\ref{fig:trend_keynote}), one can see patterns of three months of increasing popularity. The highest point is always the month in which an Apple keynote took place; the two months before usually have rumours about what new products will be introduced.
 
 The big spike halfway 2012 marks the announcement of Siri, Apple's articifial intelligence personal assistant.
 
 Unfortunately, Hacker News started after the release of the iPhone (January 2007; one month too early), so we cannot see the data for that release.
 
-\begin{figure}[ht!]
+\begin{figure}[H]
 	\caption{Popularity of Steve Jobs, Wozniak, imagineers}
 	\label{fig:trend_jobs}
 	\centering
