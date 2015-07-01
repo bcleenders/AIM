@@ -1,2 +1,5 @@
 *.class
 *.xml
+*.log
+*.aux
+*.synctex.gz
