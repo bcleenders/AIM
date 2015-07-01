@@ -5,16 +5,16 @@ import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{DefaultFormats, _}
 import org.json4s.jackson.Serialization.writePretty
+import org.json4s.{DefaultFormats, _}
 
 import scala.collection.mutable
 
 object Trends extends App {
   implicit val formats = DefaultFormats // Brings in default date formats etc.
 
-  val jobId = 1
-  val jobQuery = "2015-June-1"
+  val jobId = 2
+  val jobQuery = "2015-*"
   val jobDescription = "LDA on all articles from June 2015 with word stemming."
   // LDA parameters
   val numTopics = 50
@@ -33,6 +33,16 @@ object Trends extends App {
   val corpus: RDD[Item] = sc.wholeTextFiles("articles/HN-stories-" + jobQuery).flatMap { case (_, file) =>
     file.split("\n").map(parse(_).extract[Item]).filter(_.webpage.cleanedText != "")
   }
+
+  val clustering = sc.textFile(s"/Users/marcromeyn/Projects/HackerNewsTrends/analysis/output/WordToVec/2015/clustering")
+  val topics2 = sc.textFile(s"/Users/marcromeyn/Projects/HackerNewsTrends/analysis/output/WordToVec/2015/topics")
+
+  case class TopicStrings(id: Int, words: String)
+
+  val topicStrings = topics2.map { row =>
+    val items = row.split(",")
+    (items(0).toInt, items(1))
+  }.reduceByKey(_ + " " + _).map(x => TopicStrings(x._1, x._2))
 
   val tokenized =
     corpus

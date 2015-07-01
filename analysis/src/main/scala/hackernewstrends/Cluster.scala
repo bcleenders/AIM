@@ -10,7 +10,7 @@ import org.json4s.jackson.Serialization.writePretty
 
 import scala.collection.mutable
 
-object Cluster extends App {
+object Cluster extends scala.App {
   implicit val formats = DefaultFormats // Brings in default date formats etc.
 
   val jobId = 1
@@ -129,14 +129,14 @@ object Cluster extends App {
 
   val path = s"output/Experiment $jobId/"
 
-  articleText.saveAsTextFile(path + "clustering")
+  articleText.saveAsTextFile(outputPath + "clustering")
 
-  val topicsFile = new java.io.FileWriter(path + "topics.txt")
+  val topicsFile = new java.io.FileWriter(outputPath + "topics.txt")
   topics.foreach{case (topicId, word, weight) => topicsFile.write(s"$topicId, $word, $weight \n")}
   topicsFile.close()
 
   // Add info about the job
-  val infoFile = new java.io.FileWriter(path + "info.json")
+  val infoFile = new java.io.FileWriter(outputPath + "info.json")
   infoFile.write(writePretty(JobDistribution(jobId, jobQuery, jobDescription, numTopics, maxIterations)))
   infoFile.close()
 

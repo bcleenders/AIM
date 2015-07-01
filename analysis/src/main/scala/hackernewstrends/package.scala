@@ -1,4 +1,6 @@
 import edu.arizona.sista.processors.fastnlp.FastNLPProcessor
+import org.apache.spark.mllib.feature.Word2VecModel
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import weka.core.stemmers.SnowballStemmer
 
@@ -32,6 +34,7 @@ package object hackernewstrends {
 
   case class Tokenized(id: String, words: Array[String])
 
+
   // Load the stop words
   // List found on: http://jmlr.org/papers/volume5/lewis04a/a11-smart-stop-list/english.stop
   val stream = getClass.getResourceAsStream("/english.stop")
@@ -58,6 +61,24 @@ package object hackernewstrends {
           println(s"Article lemmatized! (number of words = $size)")
 
           words
+        }
+      })
+    }
+
+    def lemmatizeFile: RDD[(String, Array[String])] = {
+      corpus.map(x => x.HNItem.objectID -> x.webpage.cleanedText).mapPartitions(partition => {
+        // Init the NLPProcessor (other options here: CoreNLPProcessor, BioNLPProcessor)
+        val proc = new FastNLPProcessor(withDiscourse = true)
+        partition.map { p =>
+          val doc = proc.mkDocument(p._2)
+          proc.tagPartsOfSpeech(doc)
+          proc.lemmatize(doc)
+          val words = doc.sentences.flatMap(x => x.lemmas.get)
+          doc.clear()
+          val size = words.length
+          println(s"Article lemmatized! (number of words = $size)")
+
+          p._1 -> words
         }
       })
     }
@@ -123,5 +144,63 @@ package object hackernewstrends {
         .filter(!stopWords.contains(_)) // Filter out the stop-words
     }
   }
+
+  implicit class ArrayFunctions(val arr: Array[Double]) {
+    def sum(other: Array[Double]): Array[Double] = {
+      for (i <- arr.indices) yield {
+        arr(i) + other(i)
+      }
+    }.toArray
+
+    def dot(other: Array[Double]) : Double ={
+      val multi = for (i <- arr.indices) yield {
+        arr(i) * other(i)
+      }
+
+      multi.sum
+    }
+
+    def div(divisor: Double): Array[Double] = arr.map(_ / divisor)
+  }
+
+  implicit class StringToVec(val str: String) {
+    def toVec(m: Word2VecModel) = {
+      try {
+        m.transform(str)
+      } catch {
+        case e: Exception => Vectors.zeros(100)
+      }
+    }
+
+    def tokenize(): Array[Seq[String]] = {
+      val cleaned = str
+        .toLowerCase
+        .replaceAll("([.?!])\\s+", "~~") // replace period, explanation mark and question mark
+
+      val output = if(cleaned.endsWith(".") || cleaned.endsWith("?") || cleaned.endsWith("!")) cleaned.dropRight(1) else cleaned
+
+      output
+        .split("~~") // split article into sentences
+        .map( sentence =>
+        sentence
+          .replaceAll("[\\[\\]“”\\(\\)\\:\\,‘’\\\"]", "")
+          //.replaceAll("^[a-zA-Z0-9]+$", "")
+          .replace("~~", "")
+          .split("""\s+""").toSeq
+        )
+        .map { sentence =>
+        sentence.filter( x =>
+          !x.map(java.lang.Character.isLetter).forall(_ == false) || x.forall(java.lang.Character.isDigit)
+        )
+      }
+      //.map(_.filter(_.forall(java.lang.Character.isLetter))) // replace [".", "!,", "?"] and split sentence into words
+    }
+  }
+
+  def sumArray (m: Array[Double], n: Array[Double]): Array[Double] = {
+    for (i <- m.indices) yield {
+      m(i) + n(i)
+    }
+  }.toArray
 
 }
