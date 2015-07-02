@@ -2,10 +2,9 @@ package hackernewstrends
 
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.clustering.LDA
-import org.apache.spark.mllib.linalg.{Vectors, Vector}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.json4s.DefaultFormats
-import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization._
 
 import scala.collection.mutable
@@ -36,15 +35,31 @@ object LDA extends App {
 
 
 
-  val filtered = sc.wholeTextFiles("articles/HN-stories-" + jobQuery).flatMap { case (_, file) =>
-    file.split("\n").map(parse(_).extract[Item]).filter(_.webpage.cleanedText != "").map(_.HNItem.objectID)
-  }.collect()
+//  val filtered = sc.wholeTextFiles("articles/HN-stories-" + jobQuery).flatMap { case (_, file) =>
+//    file.split("\n").map(parse(_).extract[Item]).filter(_.webpage.cleanedText != "").map(_.HNItem.objectID)
+//  }.collect()
 
-  val tokenized = sc.textFile("articles/lemmatized2014").map { x =>
-    val elements = x.split(",")
+//  val tokenized = sc.wholeTextFiles("articles/lemmatized/*").map { case (_, file) =>
+//    val elements = file.split(",")
+//
+//    Tokenized(elements(0), elements(1).split(" "))
+//  }
 
-    Tokenized(elements(0), elements(1).split(" "))
-  }.filter(x => filtered.contains(x.id))
+  val tokenized = sc.wholeTextFiles("articles/lemmatized/*").flatMap { case (_, file) =>
+    file.split("\n").map { x =>
+      val elements = x.split(",")
+
+      Tokenized(elements(0), elements(1).split(" "))
+    }
+  }
+
+//  val tokenized = sc.textFile("articles/lemmatized2014").map { x =>
+//    val elements = x.split(",")
+//
+//    Tokenized(elements(0), elements(1).split(" "))
+//  }.filter(x => filtered.contains(x.id))
+
+//  val test = a.collect()
 
   //   termCounts: Sorted list of (term, termCount) pairs
   val termCounts: Array[(String, Long)] =

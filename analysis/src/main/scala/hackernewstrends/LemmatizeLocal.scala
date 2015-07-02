@@ -10,7 +10,7 @@ object LemmatizeLocal extends App {
 
   val sc = new SparkContext("local[8]", "Main")
 
-  val jobQuery = "2013"
+  val jobQuery = "2012-*"
   val path = "articles/"
 
   case class TokenizedFile(id: String, words: String) {
@@ -46,5 +46,5 @@ object LemmatizeLocal extends App {
         )
       )
 
-  tokenized.saveAsTextFile(s"$path/lemmatized2013/")
+  tokenized.saveAsTextFile(s"$path/lemmatized2012/")
 }
