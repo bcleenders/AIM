@@ -1,0 +1,23 @@
+\section{Dataset}
+As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. It is a large set of news articles, blog posts, essays, tutorials and other types of textual media. Nearly all of it is English, although there are a few other languages used as well.
+
+Let us first describe what exactly we refer to when we use the word story. To do this, we have to describe the various types of content on Hacker News, which can be catagorized in these four catagories:
+\begin{itemize}
+\item Stories: the majority of submissions are stories. A story can be either a link to another webpage or a relatively short text by the submittor.
+\item Jobs: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under one percent of the total volume.
+\item Polls: users can submit multiple choice questions for other users to answer.
+\item Comments: the three types mentioned above can receive comments by other users.
+\end{itemize}
+
+Since this research focuses only on the stories, we have left out the other three types. The dataset used in our research contains all stories between February 19th 2007 (the date Hacker News was launched\footnote{\url{https://news.ycombinator.com/hackernews.html}}) and June 10th 2015 (the day we ran our crawler). This is a time span of 3033 days, during which a total of over 1.5 million stories were submitted.
+
+\subsection{Data Retrieval}
+To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally either have a story text or a url, most only have a url.
+
+For the stories with a non-empty story text field, fetching the story from the API is enough. For other stories, we also fetched the content the URL links to. An important remark here is that some urls (especially the old ones) have become invalid over the course of time.
+
+To crawl all stories (including the linked content), we used a homemade crawler that fetches the content, strips out meaningless text and html and saves the result in chunks of 1 day's worth of content. The code for this crawler is publicly available on GitHub\footnote{\url{https://github.com/bcleenders/AIM/tree/master/crawler}}.
+
+The algorithm used for the extraction of meaningfull content is GoOse\footnote{\url{https://github.com/advancedlogic/GoOse}}. It uses heuristics to rank the importance and relevance of html elements on a webpage. For example: if it detects a \texttt{<div>...</div>} block with a lot of words inside, then that is likely to be important. If, on the other hand, it finds an html block \texttt{<button>Login</button>}, then it will remove the block for it is probably not a relevant part of the text of the page.
+
+The resulting dataset is about 4.4 GB in size.

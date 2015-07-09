@@ -1,49 +1,6 @@
-\section{Introduction}
-\subsection{What is HackerNews}
-Hacker News is a social news site: it aggregates news by allowing users to submit stories. Interesting submissions can be upvoted by other users and all submissions are ranked by popularity.
+\input{introduction}
 
-The content on Hacker News is mostly related to science, in particular computer science. The guidelines for what content can be posted are very broad; the guidelines specify on topic as ``\textit{anything that gratifies one's intellectual curiosity}''\footnote{\url{https://news.ycombinator.com/newsguidelines.html}}.
-
-Over the last eight years Hacker News has experienced rapid growth, resulting in a daily 2.6 million pageviews and 3.5 unique visitors per month\footnote{\url{https://news.ycombinator.com/item?id=9219581}}. One of the reasons suggested for this popularity is Hacker News' similarity to how Reddis used to be\footnote{\url{http://techcrunch.com/2013/05/18/the-evolution-of-hacker-news/}}: user-submitted content with a very minimalistic, terminal-like interface.
-
-\subsection{Research Question}
-The world changed a lot over the last eight years, especially in the field of computer science.  The userbase of Hacker News and their interests have changed as well. In this research, we want to see how they changed; what new . Informally phrased, we want to find trends in the popularity of several topics over the last eight years. This lead to the following research question:\\
-\\
-\textsc{Research Question:} how did the popularity of topics on Hacker News change over time?\\
-\\
-This question depends on two other questions, since we have not yet specified what we mean by popular nor what topics we mean exactly. These subquestions are:\\
-\\
-\textsc{SubQuestion 1:} how does one quantify the popularity of a topic?\\
-\textsc{SubQuestion 2:} what topics does the Hacker News content consist of?\\
-
-\subsection{Outline}
-We will address the first subquestion by ranking posts and users over the entire Hacker News history. This will help characterize the dataset and show how various ways of measurent are often very similar and reveal some flaws in several ways of measuring popularity.
-
-Dividing the content in topics is a more academically challenging task. We have used two methods to divide the articles into categories: latent Dirichlet allocation and a combination of Word2Vec and k-means. Both methods are briefly explained in section~\ref{sec:topic_detection}.
-
-\section{Dataset}
-As explained in the previous section, our analysis is on the set of all stories posted on Hacker News. It is a large set of news articles, blog posts, essays, tutorials and other types of textual media. Nearly all of it is English, although there are a few other languages used as well.
-
-Let us first describe what exactly we refer to when we use the word story. To do this, we have to describe the various types of content on Hacker News, which can be catagorized in these four catagories:
-\begin{itemize}
-\item Stories: the majority of submissions are stories. A story can be either a link to another webpage or a relatively short text by the submittor.
-\item Jobs: companies sponsored by YCombinator (the seed investor behind Hacker News) can post job offers on Hacker News. The percentage of Jobs is very small: well under one percent of the total volume.
-\item Polls: users can submit multiple choice questions for other users to answer.
-\item Comments: the three types mentioned above can receive comments by other users.
-\end{itemize}
-
-Since this research focuses only on the stories, we have left out the other three types. The dataset used in our research contains all stories between February 19th 2007 (the date Hacker News was launched\footnote{\url{https://news.ycombinator.com/hackernews.html}}) and June 10th 2015 (the day we ran our crawler). This is a time span of 3033 days, during which a total of over 1.5 million stories were submitted.
-
-\subsection{Data Retrieval}
-To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic data about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally either have a story text or a url, most only have a url.
-
-For the stories with a non-empty story text field, fetching the story from the API is enough. For other stories, we also fetched the content the URL links to. An important remark here is that some urls (especially the old ones) have become invalid over the course of time.
-
-To crawl all stories (including the linked content), we used a homemade crawler that fetches the content, strips out meaningless text and html and saves the result in chunks of 1 day's worth of content. The code for this crawler is publicly available on GitHub\footnote{\url{https://github.com/bcleenders/AIM/tree/master/crawler}}.
-
-The algorithm used for the extraction of meaningfull content is GoOse\footnote{\url{https://github.com/advancedlogic/GoOse}}. It uses heuristics to rank the importance and relevance of html elements on a webpage. For example: if it detects a \texttt{<div>...</div>} block with a lot of words inside, then that is likely to be important. If, on the other hand, it finds an html block \texttt{<button>Login</button>}, then it will remove the block for it is probably not a relevant part of the text of the page.
-
-The resulting dataset is about 4.4 GB in size.
+\input{dataset}
 
 \input{initial_analysis}
 

@@ -14,7 +14,7 @@ object Cluster extends scala.App {
   implicit val formats = DefaultFormats // Brings in default date formats etc.
 
   val jobId = 1
-  val jobQuery = "2015-June-1"
+  val jobQuery = "200*"
   val jobDescription = "LDA on all articles from June 2015 with word stemming."
   // LDA parameters
   val numTopics = 50
@@ -66,7 +66,7 @@ object Cluster extends scala.App {
   val numStopwords = 100
   val vocabArray: Array[String] =
     termCounts
-      .takeRight(termCounts.size - numStopwords)
+      .drop(numStopwords)
       .map(_._1)
 
 
@@ -96,7 +96,6 @@ object Cluster extends scala.App {
   val lda = new LDA().setK(numTopics).setMaxIterations(maxIterations)
 
   val ldaModel = lda.run(documents)
-  //val avgLogLikelihood = ldaModel.logLikelihood / documents.count()
 
   // Write topics, showing top-weighted 20 terms for each topic.
   var counter = -1
