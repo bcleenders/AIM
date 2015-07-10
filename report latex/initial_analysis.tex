@@ -24,7 +24,7 @@ If users like a story, they can express their approval by upvoting it. These upv
 
 To enter the frontpage (the top 30), a story often needs at least ten upvotes, stories that stay on the frontpage for a longer period of time will often have over a hundred upvotes. The distribution of upvotes per story can be seen in figure~\ref{fig:distribution}. Stories placed in buckets of size 100 based on the number of upvotes they received. The graph plots the size of each bucket
 
-Note that these graphs are scaled logarithmically: in the graph showing all posts (figure~\ref{fig:distribution_all}), 97.5\% of the stories are in the first bucket. That means only 2.5\% of the stories get over 100 upvotes. 
+Note that these graphs are scaled logarithmically: in the graph showing all posts (figure~\ref{fig:distribution_all}), 97.5\% of the stories are in the first bucket, i.e. only 2.5\% of the stories get over 100 upvotes. 
 
 The second graph (\ref{fig:distribution_zoomed_in}) is a zoomed in version with a bucket size of 1, and shows the distribution for points with 30 upvotes or less, a set of over 1.4 million stories.
 
@@ -113,3 +113,20 @@ These rankings provide some insights into what types on news are popular. The bi
 The high ranking of github.com (a code hosting site, \textit{not} a news site) can be explained by the large number of open source projects hosted on GitHub that submit links to new versions and press releases on Hacker News. Some examples of these projects are Facebook's React framework, Twitter's Bootstrap, SQLite and io.js. 
 
 Notably, GitHub's competitors (e.g. BitBucket, GitLab and Beanstalk) do not show up in these rankings. This demonstrates GitHub's overpowering popularity in the code hosting market, at least in the open source community.
+
+% TODO where do we put this part...
+In the top lists given above, we have provided the number of articles, points and comments on groups of articles. The strong similarity between the different methods of ranking indicates a strong correlation between how well a story scores on various features. This is in line with what one might expect: people post, like and comment most of things they consider most interesting.
+
+\subsection{Measuring popularity}
+First and foremost, our popularity must account for different lengths of months and a smaller userbase in the early years of Hacker News. To do so, we must use relative scores per month, rather than providing absolute number.
+
+We have decided to base our popularity measure on all three features we used for the rankings above: number of articles, number of upvotes and number of comments. If a topic receives 2\% of the arcticles, 2\% of the upvotes and 5\% of the comments, the popularity score is 3\% (the average of the three).
+
+To give a formal definition: let $a \in A_m$ be a story in month $m$, let $a \in t$ denote that article $a$ is in topic $t$, let $a_u$ (resp. $a_c$) be the number of upvotes (resp. comments) article $a$ has received. Then, given a topic $t$ and a month $m$, the score for the topic in that month is:
+
+$$
+	score(t, m) = 
+		\frac{1}{3} \frac{|\{a \in A_m | a \in t\}|}{|\{a \in A_m\}|} + 
+		\frac{1}{3} \frac{\sum_{a \in A_m | a \in t} a_u}{\sum_{a \in A_m} a_u}  + 
+		\frac{1}{3} \frac{\sum_{a \in A_m | a \in t} a_c}{\sum_{a \in A_m} a_c}
+$$
