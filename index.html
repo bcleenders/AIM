@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Skeleton: Responsive CSS Boilerplate</title>
+	<title>AIM 3 </title>
 	<meta name="description" content="">
 	<meta name="author" content="Bram Leenders, Marc Romeyn">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,15 +11,12 @@
 
 	<link rel="stylesheet" href="./style.css">
 
-	<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
 	<script src="http://www.amcharts.com/lib/3/amcharts.js"></script>
 	<script src="http://www.amcharts.com/lib/3/serial.js"></script>
 	<script src="http://www.amcharts.com/lib/3/themes/dark.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 
-	<!-- Favicon
-	–––––––––––––––––––––––––––––––––––––––––––––––––– -->
-	<link rel="icon" type="image/png" href="../../dist/images/favicon.png">
+	<!-- <link rel="icon" type="image/png" href="../../dist/images/favicon.png"> -->
 
 </head>
 <body>
@@ -38,7 +35,7 @@
 					The activity per month; the number of articles (stories), comments and upvotes.
 				</p>
 				<p>
-					Note that we used a <i>log</i> scale, and that the last month (June 2015) only contains data of the first half of the month.
+					Note that the last month (June 2015) only contains only one-third of the month (up to June 10th).
 				</p>
 				</div>
 		</div>
@@ -48,15 +45,31 @@
 			</div>
 		</div>
 
+		<hr>
+
 		<!-- Topic-specific activity -->
 		<div class="row">
-			<div class="six columns">
+			<div class="twelve columns">
 				<h3>Topic-specific activity</h3>
+				<p>
+					To view the activity for a specific topic, enter the topic id in the box below. Interesting examples are 70 (Snowden), 17 (Raspberry Pi), 579 (Steve Jobs) and 412 (Docker).
+				</p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="twelve columns">		
 				<input class="u-full-width" type="text" placeholder="Topic id (default is 0)" id="topicid">
 				<p id="warning"></p>
 			</div>
+		</div>
+		<div class="row">
 			<div class="six columns">
-				<ul id="keywords">
+				<ul id="keywords0">
+					<!-- keywords show here... -->
+				</ul>
+			</div>
+			<div class="six columns">
+				<ul id="keywords1">
 					<!-- keywords show here... -->
 				</ul>
 			</div>
@@ -68,6 +81,18 @@
 		</div>
 	</div>
 </body>
+
+<footer>
+	<div class="container">
+		<div class="row">
+			<div class="twelve columns">
+				<small>
+					Styling done with <a href="http://getskeleton.com/" target="_blank">Skeleton</a>, thanks Dave! Charts rendered by <a href="http://www.amcharts.com/" target="_blank">amCharts</a>.
+				</small>
+			</div>
+		</div>
+	</div>
+</footer>
 
 
 	<script language="Javascript">
@@ -132,11 +157,12 @@
 	    };
 
 	    var updateKeywords = function(topicId) {
-	    	var html = '';
+	    	var kw = ['', ''];
 			for(var i = 0; i < keywords[topicId].length; i++) {
-				html += '<li>' + keywords[topicId][i].w + ' - <i>' + keywords[topicId][i].s + '</i>';
+				kw[i%2] += '<li>' + keywords[topicId][i].w + ' - <i>' + keywords[topicId][i].s + '</i>';
 			}
-			$('#keywords').html(html);
+			$('#keywords0').html(kw[0]);
+			$('#keywords1').html(kw[1]);
 	    };
 
 		var drawGraph = function(dataset, id) {
@@ -150,13 +176,6 @@
 			    "valueAxes": [{
 			        // "logarithmic": true,
 			        "dashLength": 1,
-			        "guides": [{
-			            "dashLength": 6,
-			            "inside": true,
-			            "label": "average",
-			            "lineAlpha": 1,
-			            "value": 90.4
-			        }],
 			        "position": "left"
 			    }],
 			    "graphs": [{
