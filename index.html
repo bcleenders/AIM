@@ -50,10 +50,15 @@
 
 		<!-- Topic-specific activity -->
 		<div class="row">
-			<div class="twelve columns">
+			<div class="six columns">
 				<h3>Topic-specific activity</h3>
 				<input class="u-full-width" type="text" placeholder="Topic id (default is 0)" id="topicid">
 				<p id="warning"></p>
+			</div>
+			<div class="six columns">
+				<ul id="keywords">
+					<!-- keywords show here... -->
+				</ul>
 			</div>
 		</div>
 		<div class="row">
@@ -67,20 +72,32 @@
 
 	<script language="Javascript">
 		var dataset;
+		var keywords;
 		var changingChart;
 
-		$.getJSON("./pointseries.json")
-		.fail(function() {
-			console.log("An error occured...");
-		})
-		.done(function(result) {
-			dataset = result;
+		$.getJSON("./scores.json")
+			.fail(function() {
+				console.log("An error occured fetching the topic scores...");
+			})
+			.done(function(result) {
+				dataset = result;
 
-	    	drawGraph(dataset.totals, "overallActivity");
+				// Draw main chart
+		    	drawGraph(dataset.totals, "overallActivity");
 
+		    	// Draw topic-specific chart
+		    	changingChart = drawGraph(prepareData(0), "specificActivity");
+		    });
 
-	    	changingChart = drawGraph(prepareData(0), "specificActivity");
-	    });
+		$.getJSON("./keywords.json")
+			.fail(function() {
+				console.log("An error occured fetching the keywords...");
+			})
+			.done(function(result) {
+				keywords = result;
+
+				updateKeywords(0);
+		    });
 
 	    $('input#topicid').keyup(function() {
 	    	if($(this).val().length > 0) {
@@ -88,6 +105,7 @@
 		    	
 		    	if(! isNaN(topicId) && 0 <= topicId && topicId <= 999) {
 		    		updateTopic(topicId);
+		    		updateKeywords(topicId);
 		    		$('#warning').html("");
 		    	} else {
 		    		$('#warning').html("Please enter a number in the range 0 to 999.");
@@ -111,6 +129,14 @@
 	    var updateTopic = function(topicId) {
 	    	changingChart.dataProvider = prepareData(topicId);
 	    	changingChart.validateData();
+	    };
+
+	    var updateKeywords = function(topicId) {
+	    	var html = '';
+			for(var i = 0; i < keywords[topicId].length; i++) {
+				html += '<li>' + keywords[topicId][i].w + ' - <i>' + keywords[topicId][i].s + '</i>';
+			}
+			$('#keywords').html(html);
 	    };
 
 		var drawGraph = function(dataset, id) {
