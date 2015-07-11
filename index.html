@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>AIM 3 </title>
+	<meta name="description" content="">
+	<meta name="author" content="Bram Leenders, Marc Romeyn">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href="./style.css">
+
+	<script src="http://www.amcharts.com/lib/3/amcharts.js"></script>
+	<script src="http://www.amcharts.com/lib/3/serial.js"></script>
+	<script src="http://www.amcharts.com/lib/3/themes/dark.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+	<!-- <link rel="icon" type="image/png" href="../../dist/images/favicon.png"> -->
+
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="twelve columns">
+				<h1>Hacker News popularity</h1>
+			</div>
+		</div>
+
+		<!-- Overall activity -->
+		<div class="row">
+			<div class="twelve columns">
+				<h3>Overall activity</h3>
+				<p>
+					The activity per month; the number of articles (stories), comments and upvotes.
+				</p>
+				<p>
+					Note that the last month (June 2015) only contains only one-third of the month (up to June 10th).
+				</p>
+				</div>
+		</div>
+		<div class="row">
+			<div class="twelve columns">
+				<div id="overallActivity" class="chartdiv"></div>
+			</div>
+		</div>
+
+		<hr>
+
+		<!-- Topic-specific activity -->
+		<div class="row">
+			<div class="twelve columns">
+				<h3>Topic-specific activity</h3>
+				<p>
+					To view the activity for a specific topic, enter the topic id in the box below. Interesting examples are 70 (Snowden), 17 (Raspberry Pi), 579 (Steve Jobs) and 412 (Docker).
+				</p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="twelve columns">		
+				<input class="u-full-width" type="text" placeholder="Topic id (default is 0)" id="topicid">
+				<p id="warning"></p>
+			</div>
+		</div>
+		<div class="row">
+			<div class="six columns">
+				<ul id="keywords0">
+					<!-- keywords show here... -->
+				</ul>
+			</div>
+			<div class="six columns">
+				<ul id="keywords1">
+					<!-- keywords show here... -->
+				</ul>
+			</div>
+		</div>
+		<div class="row">
+			<div class="twelve columns">
+				<div id="specificActivity" class="chartdiv"></div>
+			</div>
+		</div>
+	</div>
+</body>
+
+<footer>
+	<div class="container">
+		<div class="row">
+			<div class="twelve columns">
+				<small>
+					Styling done with <a href="http://getskeleton.com/" target="_blank">Skeleton</a>, thanks Dave! Charts rendered by <a href="http://www.amcharts.com/" target="_blank">amCharts</a>.
+				</small>
+			</div>
+		</div>
+	</div>
+</footer>
+
+
+	<script language="Javascript">
+		var dataset;
+		var keywords;
+		var changingChart;
+
+		$.getJSON("./scores.json")
+			.fail(function() {
+				console.log("An error occured fetching the topic scores...");
+			})
+			.done(function(result) {
+				dataset = result;
+
+				// Draw main chart
+		    	drawGraph(dataset.totals, "overallActivity");
+
+		    	// Draw topic-specific chart
+		    	changingChart = drawGraph(prepareData(0), "specificActivity");
+		    });
+
+		$.getJSON("./keywords.json")
+			.fail(function() {
+				console.log("An error occured fetching the keywords...");
+			})
+			.done(function(result) {
+				keywords = result;
+
+				updateKeywords(0);
+		    });
+
+	    $('input#topicid').keyup(function() {
+	    	if($(this).val().length > 0) {
+		    	var topicId = JSON.parse($(this).val());
+		    	
+		    	if(! isNaN(topicId) && 0 <= topicId && topicId <= 999) {
+		    		updateTopic(topicId);
+		    		updateKeywords(topicId);
+		    		$('#warning').html("");
+		    	} else {
+		    		$('#warning').html("Please enter a number in the range 0 to 999.");
+		    	}
+		    }
+	    });
+
+	    var prepareData = function(topicId) {
+	    	var output = [];
+	    	for(var i = 0; i < dataset.topicseries[topicId].points.length; i++) {
+	    		output[i] = {
+	    			date: dataset.totals[i].date,
+	    			articles: dataset.topicseries[topicId].articles[i],
+	    			points: dataset.topicseries[topicId].points[i],
+	    			comments: dataset.topicseries[topicId].comments[i]
+	    		};
+	    	}
+	    	return output;
+	    }
+
+	    var updateTopic = function(topicId) {
+	    	changingChart.dataProvider = prepareData(topicId);
+	    	changingChart.validateData();
+	    };
+
+	    var updateKeywords = function(topicId) {
+	    	var kw = ['', ''];
+			for(var i = 0; i < keywords[topicId].length; i++) {
+				kw[i%2] += '<li>' + keywords[topicId][i].w + ' - <i>' + keywords[topicId][i].s + '</i>';
+			}
+			$('#keywords0').html(kw[0]);
+			$('#keywords1').html(kw[1]);
+	    };
+
+		var drawGraph = function(dataset, id) {
+			return AmCharts.makeChart(id, {
+			    "type": "serial",
+			    "theme": "light",
+			    "marginRight": 80,
+			    "marginTop": 17,
+			    "autoMarginOffset": 20,
+			    "dataProvider": dataset,
+			    "valueAxes": [{
+			        // "logarithmic": true,
+			        "dashLength": 1,
+			        "position": "left"
+			    }],
+			    "graphs": [{
+			        "bullet": "round",
+			        "id": "a",
+			        "bulletBorderAlpha": 1,
+			        "bulletSize": 2,
+			        "lineThickness": 1,
+			        "title": "Articles",
+			        "type": "smoothedLine",
+			        "useLineColorForBulletBorder": true,
+			        "valueField": "articles"
+			    },
+			    {
+			        "bullet": "round",
+			        "id": "p",
+			        "bulletBorderAlpha": 1,
+			        "bulletSize": 2,
+			        "lineThickness": 1,
+			        "title": "Points",
+			        "type": "smoothedLine",
+			        "useLineColorForBulletBorder": true,
+			        "valueField": "points"
+			    },
+			    {
+			        "bullet": "round",
+			        "id": "c",
+			        "bulletBorderAlpha": 1,
+			        "bulletSize": 2,
+			        "lineThickness": 1,
+			        "title": "Comments",
+			        "type": "smoothedLine",
+			        "useLineColorForBulletBorder": true,
+			        "valueField": "comments"
+			    }],
+			    "chartScrollbar": {},
+			    "chartCursor": {
+			        "valueLineEnabled": true,
+			        "valueLineBalloonEnabled": true,
+			        "valueLineAlpha": 0.5,
+			        "fullWidth": true,
+			        "cursorAlpha": 0.05
+			    },
+			    "dataDateFormat": "YYYY-MM",
+			    "categoryField": "date",
+			    "categoryAxis": {
+			        "parseDates": true
+			    },
+			    "export": {
+			        "enabled": true
+			    },
+			    "legend": {
+					"useGraphSettings": true
+				}
+			});
+		};
+	</script>
+</html>
