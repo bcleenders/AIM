@@ -122,11 +122,11 @@ First and foremost, our popularity must account for different lengths of months 
 
 We have decided to base our popularity measure on all three features we used for the rankings above: number of articles, number of upvotes and number of comments. If a topic receives 2\% of the arcticles, 2\% of the upvotes and 5\% of the comments, the popularity score is 3\% (the average of the three).
 
-To give a formal definition: let $a \in A_m$ be a story in month $m$, let $a \in t$ denote that article $a$ is in topic $t$, let $a_u$ (resp. $a_c$) be the number of upvotes (resp. comments) article $a$ has received. Then, given a topic $t$ and a month $m$, the score for the topic in that month is:
+To give a formal definition: let $S_m$ the collection of all stories in month $m$, $T_i$ all stories in the topic number $i$, let $s_u$ (resp. $s_c$) be the number of upvotes (resp. comments) story $s$ has received. Then, given a topic id $i$ and a month $m$, the score for that topic in that month is:
 
 $$
-	score(t, m) = 
-		\frac{1}{3} \frac{|\{a \in A_m | a \in t\}|}{|\{a \in A_m\}|} + 
-		\frac{1}{3} \frac{\sum_{a \in A_m | a \in t} a_u}{\sum_{a \in A_m} a_u}  + 
-		\frac{1}{3} \frac{\sum_{a \in A_m | a \in t} a_c}{\sum_{a \in A_m} a_c}
+	score(i, m) = 
+		\frac{1}{3} \frac{|\{s \in S_m \cup T_i\}|}{|\{s \in S_m\}|} + 
+		\frac{1}{3} \frac{\sum_{s \in S_m \cup \in T_i} s_u}{\sum_{s \in S_m} s_u}  + 
+		\frac{1}{3} \frac{\sum_{s \in S_m \cup \in T_i} s_c}{\sum_{s \in S_m} s_c}
 $$
