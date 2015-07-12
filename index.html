@@ -96,22 +96,31 @@
 
 
 	<script language="Javascript">
-		var dataset;
+		var totals;
+		var scores;
 		var keywords;
 		var changingChart;
 
-		$.getJSON("./scores.json")
+		$.getJSON("./totals.json")
 			.fail(function() {
-				console.log("An error occured fetching the topic scores...");
+				console.log("An error occured fetching the totals...");
 			})
 			.done(function(result) {
-				dataset = result;
+				totals = result;
 
 				// Draw main chart
-		    	drawGraph(dataset.totals, "overallActivity");
+		    	drawGraph(totals, "overallActivity");
+		    });
 
-		    	// Draw topic-specific chart
-		    	changingChart = drawGraph(prepareData(0), "specificActivity");
+		$.getJSON("./scores.json")
+			.fail(function() {
+				console.log("An error occured fetching the scores...");
+			})
+			.done(function(result) {
+				scores = result;
+
+				// Draw topic-specific chart
+		    	changingChart = drawGraph(scores[0], "specificActivity");
 		    });
 
 		$.getJSON("./keywords.json")
@@ -138,21 +147,8 @@
 		    }
 	    });
 
-	    var prepareData = function(topicId) {
-	    	var output = [];
-	    	for(var i = 0; i < dataset.topicseries[topicId].points.length; i++) {
-	    		output[i] = {
-	    			date: dataset.totals[i].date,
-	    			articles: dataset.topicseries[topicId].articles[i],
-	    			points: dataset.topicseries[topicId].points[i],
-	    			comments: dataset.topicseries[topicId].comments[i]
-	    		};
-	    	}
-	    	return output;
-	    }
-
 	    var updateTopic = function(topicId) {
-	    	changingChart.dataProvider = prepareData(topicId);
+	    	changingChart.dataProvider = scores[topicId];
 	    	changingChart.validateData();
 	    };
 
@@ -187,7 +183,7 @@
 			        "title": "Articles",
 			        "type": "smoothedLine",
 			        "useLineColorForBulletBorder": true,
-			        "valueField": "articles"
+			        "valueField": "a"
 			    },
 			    {
 			        "bullet": "round",
@@ -198,7 +194,7 @@
 			        "title": "Points",
 			        "type": "smoothedLine",
 			        "useLineColorForBulletBorder": true,
-			        "valueField": "points"
+			        "valueField": "p"
 			    },
 			    {
 			        "bullet": "round",
@@ -209,7 +205,7 @@
 			        "title": "Comments",
 			        "type": "smoothedLine",
 			        "useLineColorForBulletBorder": true,
-			        "valueField": "comments"
+			        "valueField": "c"
 			    }],
 			    "chartScrollbar": {},
 			    "chartCursor": {
@@ -220,7 +216,7 @@
 			        "cursorAlpha": 0.05
 			    },
 			    "dataDateFormat": "YYYY-MM",
-			    "categoryField": "date",
+			    "categoryField": "d",
 			    "categoryAxis": {
 			        "parseDates": true
 			    },
