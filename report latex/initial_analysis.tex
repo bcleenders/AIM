@@ -122,7 +122,7 @@ First and foremost, our popularity must account for different lengths of months 
 
 We have decided to base our popularity measure on all three features we used for the rankings above: number of articles, number of upvotes and number of comments. If a topic receives 2\% of the arcticles, 2\% of the upvotes and 5\% of the comments, the popularity score is 3\% (the average of the three).
 
-To give a formal definition: let $S_m$ the collection of all stories in month $m$, $T_i$ all stories in the topic number $i$, let $s_u$ (resp. $s_c$) be the number of upvotes (resp. comments) story $s$ has received. Then, given a topic id $i$ and a month $m$, the score for that topic in that month is:
+To give a formal definition: let $S_m$ be the set of all stories in month $m$ and $T_i$ all stories in the topic number $i$. With these two definitions, $S_m \cup T_i$ is the set of all stories on a topic $i$ in month $m$. Furthermore, let $s_u$ (resp. $s_c$) be the number of upvotes (resp. comments) story $s$ has received. Then, given a topic id $i$ and a month $m$, the score for that topic in that month is:
 
 $$
 	score(i, m) = 
