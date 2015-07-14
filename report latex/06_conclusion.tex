@@ -1,7 +1,7 @@
 \section{Conclusion}
 The goal of this research was to find out how the popularity of topics on Hacker News evolves over time. To answer this question, we defined a popularity measure based on the percentage of articles, upvotes and comments in a topic.
 
-We then continued by dividing the dataset 1.5 million articles into topics using two unsupervised clustering algorithms: Word2Vec in combination with k-means and Latent Dirichlet allocation.
+We then continued by dividing the dataset of 1.5 million articles into a thousand topics using two unsupervised clustering algorithms: Word2Vec in combination with k-means and latent Dirichlet allocation. Through manual inspection, we have verified that the topics formed by these algorithms are coherent and sensible.
 
 The resulting distribution of stories over these topics allowed us to determine the popularity of topics. Looking at the popularity plotted over time, we have seen three types of ``trends":
 \begin{itemize}
@@ -10,3 +10,4 @@ The resulting distribution of stories over these topics allowed us to determine 
 \item Long-lasting trends, e.g. concepts or technologies (Raspberry Pi, Docker/CoreOS). These topics attract attention over a longer span of time, but even within these time spans the months with big news (product releases) generally have a much higher (by a factor of two or three) popularity. Only really big topics have such a long-lasting trend.
 \end{itemize}
 
+We have demonstrated that many topics show a strong correlation between real world events and increased activity on Hacker News. Not all topics are equally clear defined and not all have such clearly visible trends, but many do. Unfortunately, this paper does not offer enough space to show charts for all thousand topics. As a solution this, we will publish all our data online so interested readers can easily create their own charts.
