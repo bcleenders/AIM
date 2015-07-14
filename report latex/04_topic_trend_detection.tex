@@ -1,0 +1,24 @@
+\section{Topic detection}
+\label{sec:topic_detection}
+
+\textbf{Stuff we must include:}
+\begin{itemize}
+\item Why K=1000 (long period of time, clusters seemed reasonable)
+\item Why unsupervised (avoid bias choosing topics)
+\end{itemize}
+
+It's data reduction and clustering, really...
+
+Say that we did two types of unsupervised clustering: k-means and LDA. K-means
+
+\subsection{Latent Dirichlet Allocation}
+Let's start by formally define the terms used in Latent Dirichlet Allocation (LDA):
+
+\begin{itemize} 
+\item \textbf{\textit{Word:}} the basic unit of discrete data, defined to be an item from a vocabulary indexed by
+$\{1, \dotsc, V\}$. We represent words using unit-basis vectors that have a single component equal to one and all other components equal to zero. Thus, using superscripts to denote components, the $v$th word in the vocabulary is represented by a $V$ -vector $w$ such that $w^v = 1$ and $w^u = 0$ for $u \neq v$.
+\item \textbf{\textit{Document:}}  a sequence of $N$ words denoted by $\mathbf{w} = (w_1, w_2, \dotsc, w_N)$, where $w_n$ is the $n$th word in the sequence.
+\item \textbf{\textit{Corpus:}} collection of $M$ documents denoted by $\mathbf{D = \{w_1,w_2, \dotsc, w_M\}}$.
+\end{itemize}
+
+LDA is a generative probabilistic model of a corpus. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words.\cite{blei2003latent}
