@@ -4,8 +4,8 @@
 In order to cluster the articles into topics we chose two different unsupervised approaches: 
 
 \begin{enumerate}
-\item LDA: clusters based on the content of the articles. This algorithm represents articles as a mixture of different topics which contain words with a certain probability. 
-\item A combination of Word2Vec with K-Means: clusters the articles based on the titles. With a trained Word2Vec-model every word can be transformed into a vector. Transforming a title into a vector is simply adding all the vectors of the words together. These title vectors can then be fed into K-Means in order to do the unsupervised clustering.
+\item LDA: clusters based on the content of the articles. This algorithm represents articles as a bag of words (order of words doesn't matter). Every article consists of a mixture of different topics which contain words with a certain probability. 
+\item A combination of Word2Vec with K-Means: clusters the articles based on the titles. With a trained Word2Vec-model every word can be transformed into a vector. Transforming a title into a vector is simply adding up the vectors of all words in the title. These title vectors can then be fed into K-Means in order to do the unsupervised clustering.
 \end{enumerate}
 
 % \textbf{Stuff we must include:}
@@ -24,10 +24,11 @@ $\{1, \dotsc, V\}$. We represent words using unit-basis vectors that have a sing
 \item \textbf{\textit{Corpus:}} collection of $M$ documents denoted by $\mathbf{D = \{w_1,w_2, \dotsc, w_M\}}$.
 \end{itemize}
 
-LDA is a generative probabilistic model of a corpus. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words.\cite{blei2003latent}
+LDA is a generative probabilistic model of a corpus. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words \cite{blei2003latent}. The number of $K$ topics needs to be pre-set.
 
 \subsection{Word2Vec}
-
+Word2Vec is an algorithm developed at Google that can compute vector representations of
+words. The spatial distance between two word-vectors corresponds to word similarity. In order to achieve this it combines two different algorithms: Skip-gram and continuous bag of words (CBOW). Skip-gram model is an efficient method for learning high-quality distributed vector representations that capture a large numberof precise syntactic and semantic word relationships \cite{mikolov2013distributed}. Given a window size of $n$ words around a word $w$, the skip-gram model predicts the neighboring words given a certain word. In contrast, the CBOW model predicts the current word $w$, given the neighboring words in the window. word2vec is a successful example of ''shallow" learning and can be trained as a simple neural network. This neural network has only a single hidden layer with no non-linearities and no unsupervised pre-training of layers is needed \cite[wang2014introduction]. 
 
 \subsection{Measuring popularity of a topic}
 First and foremost, our popularity must account for different lengths of months and a smaller userbase in the early years of Hacker News. To do so, we must use relative scores per month, rather than providing absolute number.
