@@ -18,12 +18,11 @@ This lead to the following research question:\\
 This question depends on two other questions, since we have not yet specified what we mean by popular nor what topics we mean exactly. These subquestions are:\\
 \\
 \textsc{SubQuestion 1:} what topics does the Hacker News content consist of?\\
-\textsc{SubQuestion 2:} how does one quantify the popularity of a topic?\\
+\textsc{SubQuestion 2:} how does one quantify the popularity of a topic?
 
 \subsection{Outline}
-We first address the second subquestion in section~\ref{sec:exploratory}
- by ranking posts and users over the entire Hacker News history. This will help characterize the dataset and show how various ways of measurent often give similar results.
+We start this paper with a description of the dataset and our data processing steps in section~\ref{sec:dataset}. In section~\ref{sec:exploratory} we give the results of some exploratory research with the dataset to give a feeling what data is like.
 
-Dividing elements into clusters is a common machine learning task. We have used two methods to divide the articles into categories: latent Dirichlet allocation and a combination of Word2Vec and k-means. Both methods are explained in section~\ref{sec:topic_detection}. 
+After the exploratory research, we describe how we clustered the articles. We used two methods to divide the articles into categories: latent Dirichlet allocation and a combination of Word2Vec and k-means. Both methods and their implementations are explained in section~\ref{sec:topic_detection}. 
 
 The results of the classification and the trends are shown in section~\ref{sec:results}.
