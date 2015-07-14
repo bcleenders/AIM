@@ -1,0 +1,44 @@
+\section{Clustering Articles Into Topics}
+\label{sec:topic_detection}
+
+In order to cluster the articles into topics we chose two different unsupervised approaches: 
+
+\begin{enumerate}
+\item LDA: clusters based on the content of the articles. This algorithm represents articles as a mixture of different topics which contain words with a certain probability. 
+\item A combination of Word2Vec with K-Means: clusters the articles based on the titles. With a trained Word2Vec-model every word can be transformed into a vector. Transforming a title into a vector is simply adding all the vectors of the words together. These title vectors can then be fed into K-Means in order to do the unsupervised clustering.
+\end{enumerate}
+
+% \textbf{Stuff we must include:}
+% \begin{itemize}
+% \item Why K=1000 (long period of time, clusters seemed reasonable)
+% \item Why unsupervised (avoid bias choosing topics)
+% \end{itemize}
+
+\subsection{Latent Dirichlet Allocation}
+Let's start by formally define the terms used in Latent Dirichlet Allocation (LDA):
+
+\begin{itemize} 
+\item \textbf{\textit{Word:}} the basic unit of discrete data, defined to be an item from a vocabulary indexed by
+$\{1, \dotsc, V\}$. We represent words using unit-basis vectors that have a single component equal to one and all other components equal to zero. Thus, using superscripts to denote components, the $v$th word in the vocabulary is represented by a $V$ -vector $w$ such that $w^v = 1$ and $w^u = 0$ for $u \neq v$.
+\item \textbf{\textit{Document:}}  a sequence of $N$ words denoted by $\mathbf{w} = (w_1, w_2, \dotsc, w_N)$, where $w_n$ is the $n$th word in the sequence.
+\item \textbf{\textit{Corpus:}} collection of $M$ documents denoted by $\mathbf{D = \{w_1,w_2, \dotsc, w_M\}}$.
+\end{itemize}
+
+LDA is a generative probabilistic model of a corpus. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words.\cite{blei2003latent}
+
+\subsection{Word2Vec}
+
+
+\subsection{Measuring popularity of a topic}
+First and foremost, our popularity must account for different lengths of months and a smaller userbase in the early years of Hacker News. To do so, we must use relative scores per month, rather than providing absolute number.
+
+We have decided to base our popularity measure on all three features we used for the rankings above: number of articles, number of upvotes and number of comments. If a topic receives 2\% of the arcticles, 2\% of the upvotes and 5\% of the comments, the popularity score is 3\% (the average of the three).
+
+To give a formal definition: let $S_m$ be the set of all stories in month $m$ and $T_i$ all stories in the topic number $i$. With these two definitions, $S_m \cup T_i$ is the set of all stories on a topic $i$ in month $m$. Furthermore, let $s_u$ (resp. $s_c$) be the number of upvotes (resp. comments) story $s$ has received. Then, given a topic id $i$ and a month $m$, the score for that topic in that month is:
+
+$$
+	score(i, m) = 
+		\frac{1}{3} \frac{|S_m \cup T_i|}{|S_m|} + 
+		\frac{1}{3} \frac{\sum_{s \in S_m \cup \in T_i} s_u}{\sum_{s \in S_m} s_u}  + 
+		\frac{1}{3} \frac{\sum_{s \in S_m \cup \in T_i} s_c}{\sum_{s \in S_m} s_c}
+$$
