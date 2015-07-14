@@ -15,20 +15,18 @@ Since this research focuses only on the stories, we have left out the other thre
 \subsection{Data Processing Steps}
 The following steps were taken in the data processing:
 \begin{enumerate}
-	\item \textbf{Data retrieval}: crawl all data from the Hacker News API and the respective websites. After fetching the data, we extracted the text from the HTML using GoOse. The result was written to disk as JSON files, split on days (one file contained one day of articles).
-	\item \textbf{Exploratory research} (see section~\ref{sec:exploratory})
+	\item \textbf{Data retrieval}: crawl all data from the Hacker News API and the respective websites. We extracted the text from the HTML and wrote the result to disk as JSON files, split on days (one file contains one day of articles).
+	\item \textbf{Exploratory research} (see section~\ref{sec:exploratory}): to get a better understanding of the dataset
 		\begin{itemize}
 			\item Postgres: to allow for more versatile access to the data, we stored the dataset in a Postgres database.
 			\item Tableau: to visualize the results of our data analysis, we used Tableau.
 		\end{itemize}
-	\item \textbf{Train and apply models}: 
-
-	\item \textbf{Trend detection}: using the article information and article/topic tuples, we can calculate the popularity of a topic in a given month. By plotting charts for topics, we could compare We did this with two different techniques:
-		\begin{itemize}
-			\item \textbf{Zeppelin}: an Apache project for data analysis. We used Spark jobs and SparkSQL to analyze the data. This is a very scalable approach, but it requires some effort from the developer.
-			\item \textbf{Postgres}: the database of all stories and topics is several gigabytes in size. Although that's pretty large, a single database can still handle it. This allowed for some easier querying of the data since Postgres supports more SQL functions than SparkSQL.
-		\end{itemize}
+	\item \textbf{Train and apply clustering models} (see section~\ref{sec:topic_detection}): we used two ways of clustering the articles. Since our implementation of LDA did not scale properly, we only used the results of Word2Vec and k-means for the next steps.
+	\item \textbf{Popularity calculation}: using the article and topic information, we can plot the popularity of a topic over time. We did this using Zeppelin\footnote{\url{http://zeppelin-project.org/}}, an Apache project for data analysis. We used Spark jobs and SparkSQL to analyze the data. This is a very scalable approach, but it requires some effort from the developer.
+	\item \textbf{Interpretation}: (see section~\ref{sec:results}) since we had no automated way of linking the behaviour of the popularity (e.g. spikes or long-term in-/decrease) with real-world events, we interpreted this ourselves. We looked, for example, at the most popular articles in the months where popularity of a topic spiked.
 \end{enumerate}
+
+In the rest of this paper, we will further explain these steps and discuss the results of each step.
 
 \subsection{Data Retrieval}
 To crawl all stories, we used the official Hacker News API\footnote{\url{https://hn.algolia.com/api}}. This API returns some basic metadata about the story, such as the submitter, title, points (upvotes), a (possibly empty) story text and a (possibly empty) url. Stories generally either have a story text or a url, most only have a url.
