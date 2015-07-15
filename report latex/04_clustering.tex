@@ -3,51 +3,34 @@
 
 In order to cluster the articles into topics we chose two different unsupervised approaches: 
 
-\begin{enumerate}
-\item LDA: clusters based on the content of the articles. This algorithm represents articles as a bag of words (order of words doesn't matter). Every article consists of a mixture of different topics which contain words that occur with a certain probability within that topic. 
-\item A combination of Word2Vec with k-means: clusters the articles based on the titles. With a trained Word2Vec-model it is possible to transform every word into a vector. Transforming an article title into a vector is simply adding up the vectors of all words in the title. These title vectors can then be fed into K-Means in order to do the unsupervised clustering.
-\end{enumerate}
-
-% \textbf{Stuff we must include:}
-% \begin{itemize}
-% \item Why K=1000 (long period of time, clusters seemed reasonable)
-% \item Why unsupervised (avoid bias choosing topics)
-% \end{itemize}
+\begin{itemize}
+\item \textbf{Latent Dirichlet Allocation}: clusters based on the content of the articles. This algorithm represents articles as a bag of words: order of words does not matter. Every article consists of words, and these words are linked to different topics with some probability.
+\item \textbf{Word2Vec combined with k-means}: clusters the articles based on the titles. With a trained Word2Vec-model it is possible to transform every word into a vector. Transforming an article title into a vector is simply adding up the vectors of all words in the title. 
+The vector-representations of the titles can be used as input for k-means, which will cluster the titles.
+\end{itemize}
 
 \subsection{Latent Dirichlet Allocation}
-% Let's start by formally define the terms used in Latent Dirichlet Allocation (LDA):
-
-% \begin{itemize} 
-% \item \textbf{\textit{Word:}} the basic unit of discrete data, defined to be an item from a vocabulary indexed by
-% $\{1, \dotsc, V\}$. It represent words using unit-basis vectors that have a single component equal to one and all other components equal to zero. 
-% % Thus, using superscripts to denote components, the $v$th word in the vocabulary is represented by a $V$ -vector $w$ such that $w^v = 1$ and $w^u = 0$ for $u \neq v$.
-% \item \textbf{\textit{Document:}}  a sequence of $N$ words denoted by $\mathbf{w} = (w_1, w_2, \dotsc, w_N)$, where $w_n$ is the $n$th word in the sequence.
-% \item \textbf{\textit{Corpus:}} collection of $M$ documents denoted by $\mathbf{D = \{w_1,w_2, \dotsc, w_M\}}$.
-% \end{itemize}
-
-LDA is a generative probabilistic model of a corpus. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words \cite{blei2003latent}. The number of $k$ topics needs to be pre-set. For each document in the collection, the words are generated in a two-stage process:
+LDA is a generative probabilistic model of a set of documents. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words \cite{blei2003latent}. The input parameters are the number of topics ($k$) and the number of iterations ($N$) the algorithm will run. For each document in the collection, the words are generated in a two-stage process:
 
 \begin{enumerate}
-\item Temporary topics are assigned to each word in a semi-random manner (using the \textit{Dirichlet distribution})
-\item $N$ iterations of looping over each word $w$ in each document $d$ in the corpus
-	\begin{enumerate}[label=(\alph*)]
-		\item For each topic $t$, reassign $w$ a new topic, where we choose $t$ with probability $P(t \mid d) * P(w \mid t)$
+\item Temporary topics are assigned to each word in a semi-random manner (using the \textit{Dirichlet distribution}).
+\item Repeat $N$ times: for every word $w$ in the set of documents, do:
+	\begin{enumerate}
+		\item For each topic $t$: re-assign $w$ to $t$ with probability $P(t \mid d) \cdot P(w \mid t)$
 	\end{enumerate}
 \end{enumerate}
 
-% And for each topic t, compute two things: 
-% 1) P($t$ \mid $d$) = the proportion of words in document d that are currently assigned to topic t
-% 2) p(word w | topic t) = the proportion of assignments to topic t over all documents that come from this word w. 
-% Reassign w a new topic, where we choose topic t with probability p(topic t | document d) * p(word w | topic t) (according to our generative model, this is essentially the probability that topic t generated word w, so it makes sense that we resample the current word’s topic with this probability). (Also, I’m glossing over a couple of things here, in particular the use of priors/pseudocounts in these probabilities.)
-
-% Each document exhibits the topics in different proportion (step $1$). Each word in each document is drawn from one of the topics (step $2_b$), where the selected topic is chosen from the per-document distribution over topics (step $2_a$)\cite{blei2012probabilistic}.
+After running LDA, we can calculate the probability that a document $d$ is in a topic by looking at the probabilities words in $d$ occur in the topic. If an article can only be in one topic, simply pick the topic with the highest probabilty.
 
 \subsection{Word2Vec}
-Word2Vec is an algorithm developed at Google that can compute vector representations of
-words. The spatial distance between two word-vectors corresponds to word similarity. In order to achieve this it combines two different algorithms: Skip-gram and continuous bag of words (CBOW). Skip-gram model is an method for learning distributed vector representations that capture a large number of precise syntactic and semantic word relationships \cite{mikolov2013distributed}. Given a window size of $n$ words around a word $w$, the skip-gram model predicts the neighboring words given a certain word. In contrast, the CBOW model predicts the current word $w$, given the neighboring words in the window. Word2Vec is a successful example of ''shallow" learning and can be trained as a simple neural network. This neural network has only a single hidden layer with no non-linearities and no unsupervised pre-training of layers is needed \cite{wang2014introduction}. 
+Word2Vec is an algorithm that computes vector representations of words based on co-occurrences. The spatial distance between two word-vectors corresponds to word similarity. In order to achieve this it combines two different algorithms: skip-gram and continuous bag of words (CBOW).
+
+Skip-gram model is an method for learning distributed vector representations that capture a large number of syntactic and semantic word relationships \cite{mikolov2013distributed}. Given a a word $w$, the skip-gram model predicts the $n$ neighboring words. The CBOW model works the other way around: it predicts $w$, given the $n$ neighboring words. 
+
+Word2Vec is an example of ''shallow" learning and can be trained as a simple neural network. This neural network has a single hidden layer with no non-linearities and no unsupervised pre-training of layers is needed \cite{wang2014introduction}. 
 
 \subsection{Measuring popularity of a topic}
-First and foremost, our popularity must account for different lengths of months and a smaller userbase in the early years of Hacker News. To do so, we must use relative scores per month, rather than providing absolute number.
+First and foremost, our popularity must account for different lengths of months and a smaller userbase in the early years of Hacker News. To do so, we must use relative scores per month, rather than comparing absolute numbers.
 
 We have decided to base our popularity measure on all three features we used for the rankings above: number of articles, number of upvotes and number of comments. If a topic receives 2\% of the arcticles, 2\% of the upvotes and 5\% of the comments, the popularity score is 3\% (the average of the three).
 
