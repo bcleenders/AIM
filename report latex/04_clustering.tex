@@ -10,11 +10,11 @@ The vector-representations of the titles can be used as input for k-means, which
 \end{itemize}
 
 \subsection{Latent Dirichlet Allocation}
-LDA is a generative probabilistic model of a set of documents. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words \cite{blei2003latent}. The input parameters are the number of topics ($k$) and the number of iterations ($N$) the algorithm will run. For each document in the collection, the words are generated in a two-stage process:
+LDA is a generative probabilistic model of a set of documents. The basic idea is that documents are represented as random mixtures over latent topics, where each topic is characterized by a distribution over words \cite{blei2003latent}. The input parameters are the number of topics ($k$) and the number of iterations ($N$) the algorithm will run. For each document in the collection, the words are assigned to topics in a two-stage process:
 
 \begin{enumerate}
 \item Temporary topics are assigned to each word in a semi-random manner (using the \textit{Dirichlet distribution}).
-\item Repeat $N$ times: for every word $w$ in the set of documents, do:
+\item Repeat $N$ times: for every word $w$ in every document $d$ in the set of documents, do:
 	\begin{enumerate}
 		\item For each topic $t$: re-assign $w$ to $t$ with probability $P(t \mid d) \cdot P(w \mid t)$
 	\end{enumerate}
